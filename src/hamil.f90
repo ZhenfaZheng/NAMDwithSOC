@@ -26,6 +26,8 @@ module hamil
     real(kind=q), allocatable, dimension(:,:) :: eigKs
     ! Non-adiabatic couplings
     complex(kind=q), allocatable, dimension(:,:,:) :: NAcoup
+    ! Spin-orbital couplings
+    complex(kind=q), allocatable, dimension(:,:,:) :: SOcoup
 
     ! surface hopping related
 

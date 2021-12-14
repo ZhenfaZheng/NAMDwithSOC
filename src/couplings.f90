@@ -7,10 +7,12 @@ module couplings
   implicit none
 
   type overlap
+    integer :: ISPIN
     integer :: NBANDS
     integer :: TSTEPS
     real(kind=q) :: dt
     complex(kind=q), allocatable, dimension(:,:,:) :: Dij
+    complex(kind=q), allocatable, dimension(:,:,:) :: Sij
     real(kind=q), allocatable, dimension(:,:) :: Eig
   end type
 
