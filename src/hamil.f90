@@ -25,7 +25,7 @@ module hamil
     ! KS eigenvalues
     real(kind=q), allocatable, dimension(:,:) :: eigKs
     ! Non-adiabatic couplings
-    real(kind=q), allocatable, dimension(:,:,:) :: NAcoup
+    complex(kind=q), allocatable, dimension(:,:,:) :: NAcoup
 
     ! surface hopping related
 
@@ -119,7 +119,7 @@ module hamil
     
     ! the energy eigenvalue part
     do i=1, ks%ndim
-      ks%ham_c(i,i) = ks%eigKs(i,TION) + &
+      ks%ham_c(i,i) = ks%ham_c(i,i) + ks%eigKs(i,TION) + &
                      (ks%eigKs(i,TION+1) - ks%eigKs(i,TION)) * TELE / inp%NELM
     end do
   end subroutine

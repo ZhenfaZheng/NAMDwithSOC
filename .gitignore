@@ -4,6 +4,7 @@ src/*.mod
 
 # ignore compiled file namd
 src/namd
+src/namd_soc
 
 # ignore test folder
 test

@@ -1,0 +1,18 @@
+&NAMDPARA
+  BMIN       = 343
+  BMAX       = 366 
+  NBANDS     = 416
+
+  NSW        = 2000
+  POTIM      = 1
+  TEMP       = 300
+
+  NSAMPLE    = 10
+  NAMDTIME   = 1000
+  NELM       = 1000
+  NTRAJ      = 20000
+  LHOLE      = .F.
+
+  RUNDIR     = "../run"
+  LCPEXT     = .F.
+/
