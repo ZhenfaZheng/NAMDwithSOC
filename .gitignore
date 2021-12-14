@@ -1,0 +1,9 @@
+# ignore all .o and .mod files
+src/*.o
+src/*.mod
+
+# ignore compiled file namd
+src/namd
+
+# ignore test folder
+test
