@@ -312,10 +312,10 @@ module couplings
 
     N = inp%NSW - 1
     do j=1, N
-      write(unit=22, fmt=*) (olap%Eig(i,j), i=inp%BMIN, inp%BMAX)
+      write(unit=22, fmt='(*(G26.17))') (olap%Eig(i,j), i=inp%BMIN, inp%BMAX)
     end do
     do k=1, N
-      write(unit=23, fmt=*) ((olap%Dij(i,j, k), j=inp%BMIN, inp%BMAX), &
+      write(unit=23, fmt='(*(G26.17))') ((olap%Dij(i,j, k), j=inp%BMIN, inp%BMAX), &
                                                 i=inp%BMIN, inp%BMAX)
     end do
 
@@ -346,7 +346,7 @@ module couplings
       read(unit=22, fmt=*) (olap_sec%Eig(i,j), i=1, inp%NBASIS)
     end do
     do k=1, N
-      read(unit=23, fmt=*) ((olap_sec%Dij(i,j, k), j=1, inp%NBASIS), &
+      read(unit=23, fmt='(*(G26.17))') ((olap_sec%Dij(i,j, k), j=1, inp%NBASIS), &
                                                    i=1, inp%NBASIS)
     end do
 
