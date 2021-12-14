@@ -17,9 +17,12 @@ module fileio
     integer :: NTRAJ       ! No. of surface hopping trajectories
     integer :: NELM        ! No. of steps of electron wave propagation
     integer :: NSAMPLE     ! No. of steps of electron wave propagation
-
     real(kind=q) :: POTIM  ! Time step of MD run
     real(kind=q) :: TEMP   ! MD Temperature
+
+    integer :: SOCTYPE     ! which spin representation to use, default 1.
+                           ! 1: spin-adiabatic representation;
+                           ! 2: spin-diabatic representation.
 
     ! hole or electron surface hopping
     logical :: LHOLE
@@ -45,6 +48,7 @@ module fileio
       integer :: nsw
       integer :: iniband
       integer :: nbands
+      integer :: soctype
       integer :: namdtime
       ! integer :: namdtini    
       integer :: ntraj
@@ -64,7 +68,7 @@ module fileio
 
 
       namelist /NAMDPARA/ bmin, bmax, nsw,    &
-                                   nbands,    &
+                          soctype, nbands,    &
                           potim, ntraj, nelm, &
                           temp, rundir,       &
                           lhole, lshp, lcpext,&
@@ -80,6 +84,7 @@ module fileio
       bmin = 0
       bmax = 0
       nbands = 0
+      soctype = 1
       ! iniband = 0
       ntraj = 1000
       nelm = 1000
@@ -140,6 +145,7 @@ module fileio
       inp%NBASIS   = bmax - bmin + 1
       inp%NSW      = nsw
       inp%NBANDS   = nbands
+      inp%SOCTYPE  = soctype
       inp%NAMDTIME = namdtime
       inp%NTRAJ    = ntraj
       inp%NELM     = nelm
@@ -163,6 +169,8 @@ module fileio
       write(*,'(A30,A3,I5)') 'BMAX',     ' = ', inp%BMAX
       write(*,'(A30,A3,I5)') 'INIBAND',  ' = ', inp%INIBAND
       write(*,'(A30,A3,I5)') 'NBANDS',   ' = ', inp%NBANDS
+
+      write(*,'(A30,A3,I5)') 'SOCTYPE',  ' = ', inp%SOCTYPE
 
       write(*,'(A30,A3,I5)')   'NSW',    ' = ', inp%NSW
       write(*,'(A30,A3,F5.1)') 'POTIM',  ' = ', inp%POTIM
