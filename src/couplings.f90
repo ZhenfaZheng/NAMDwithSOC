@@ -294,6 +294,7 @@ module couplings
         call CoupFromFile(olap)
         call copyToSec(olap, olap_sec, inp)
         call writeNaEig(olap_sec, inp)
+        call writeSOTXT(olap_sec)
       end if
     else
       ! create the couplings from the wavefunctions
@@ -336,6 +337,7 @@ module couplings
       call CoupToFile(olap)
       call copyToSec(olap, olap_sec, inp)
       call writeNaEig(olap_sec, inp)
+      call writeSOTXT(olap_sec)
     end if
 
     deallocate(olap%Dij, olap%Eig)
@@ -435,6 +437,25 @@ module couplings
 
     close(unit=22)
     close(unit=23)
+  end subroutine
+
+  subroutine writeSOTXT(olap)
+    implicit none
+
+    type(overlap), intent(in) :: olap
+    integer :: i, j, it, Nt, nbas
+
+    open(unit=24, file='SOTXT', status='unknown', action='write')
+
+    nbas = olap%NBANDS
+    Nt = olap%TSTEPS - 1
+
+    do it=1, Nt
+      write(unit=24, fmt='(*(G26.17))') &
+          ((olap%Sij(i,j, it), j=1,nbas), i=1,nbas)
+    end do
+
+    close(unit=24)
   end subroutine
 
 end module couplings
