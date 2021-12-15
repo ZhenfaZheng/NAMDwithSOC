@@ -260,8 +260,7 @@ module couplings
       else
         call CoupFromFile(olap)
         call writeNaEig(olap, inp)
-        olap_sec%Eig(:,:) = olap%Eig(inp%BMIN:inp%BMAX, :)
-        olap_sec%Dij(:,:,:) = olap%Dij(inp%BMIN:inp%BMAX, inp%BMIN:inp%BMAX, :)
+        call copyToSec(olap, olap_sec, inp)
       end if
     else
       ! create the couplings from the wavefunctions
@@ -293,8 +292,7 @@ module couplings
 
         call finishAB(waveA, waveB)
       end do
-      olap_sec%Eig(:,:) = olap%Eig(inp%BMIN:inp%BMAX, :)
-      olap_sec%Dij(:,:,:) = olap%Dij(inp%BMIN:inp%BMAX, inp%BMIN:inp%BMAX, :)
+      call copyToSec(olap, olap_sec, inp)
       ! After reading, write the couplings to disk
       call CoupToFile(olap)
       call writeNaEig(olap, inp)
@@ -337,7 +335,7 @@ module couplings
       olap_sec%Dij(1:nbasU,1:nbasU,:) = olap%Dij(basisU,basisU,:)
       olap_sec%Dij(nbasU+1:nbas,nbasU+1:nbas,:) = &
           olap%Dij(basisD,basisD+nb,:)
-      olap_sec%Sij = olap%Sij(basis, basis, :)
+      ! olap_sec%Sij = olap%Sij(basis, basis, :)
 
       deallocate(basisU, basisD, basis)
 
