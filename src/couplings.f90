@@ -259,8 +259,8 @@ module couplings
         call readNaEig(olap_sec, inp)
       else
         call CoupFromFile(olap)
-        call writeNaEig(olap, inp)
         call copyToSec(olap, olap_sec, inp)
+        call writeNaEig(olap_sec, inp)
       end if
     else
       ! create the couplings from the wavefunctions
@@ -292,10 +292,10 @@ module couplings
 
         call finishAB(waveA, waveB)
       end do
-      call copyToSec(olap, olap_sec, inp)
       ! After reading, write the couplings to disk
       call CoupToFile(olap)
-      call writeNaEig(olap, inp)
+      call copyToSec(olap, olap_sec, inp)
+      call writeNaEig(olap_sec, inp)
     end if
 
     deallocate(olap%Dij, olap%Eig)
@@ -348,30 +348,30 @@ module couplings
 
     type(overlap), intent(in) :: olap
     type(namdInfo), intent(in) :: inp
-    integer :: i, j, k, N
+    integer :: i, j, it, Nt, nbas
 
     open(unit=22, file='EIGTXT', status='unknown', action='write')
     open(unit=23, file='NATXT', status='unknown', action='write')
 
-    N = inp%NSW - 1
-    do j=1, N
-      write(unit=22, fmt='(*(G26.17))') (olap%Eig(i,j), i=inp%BMIN, inp%BMAX)
-    end do
-    do k=1, N
-      write(unit=23, fmt='(*(G26.17))') ((olap%Dij(i,j, k), j=inp%BMIN, inp%BMAX), &
-                                                i=inp%BMIN, inp%BMAX)
+    Nt = inp%NSW - 1
+    nbas = olap%NBANDS
+
+    do it=1, Nt
+      write(unit=22, fmt='(*(G26.17))') (olap%Eig(i,it), i=1,nbas)
+      write(unit=23, fmt='(*(G26.17))') &
+          ((olap%Dij(i,j, it), j=1,nbas), i=1,nbas)
     end do
 
     close(unit=22)
     close(unit=23)
   end subroutine
 
-  subroutine readNaEig(olap_sec, inp)
+  subroutine readNaEig(olap, inp)
     implicit none
 
-    type(overlap), intent(inout) :: olap_sec
+    type(overlap), intent(inout) :: olap
     type(namdInfo), intent(in) :: inp
-    integer :: i, j, k, N, ierr
+    integer :: i, j, it, Nt, nbas, ierr
 
     open(unit=22, file='EIGTXT', status='unknown', action='read', iostat=ierr)
     if (ierr /= 0) then
@@ -384,16 +384,17 @@ module couplings
       stop
     end if
 
-    N = inp%NSW - 1
-    do j=1, N
-      read(unit=22, fmt=*) (olap_sec%Eig(i,j), i=1, inp%NBASIS)
-    end do
-    do k=1, N
-      read(unit=23, fmt='(*(G26.17))') ((olap_sec%Dij(i,j, k), j=1, inp%NBASIS), &
-                                                   i=1, inp%NBASIS)
+    Nt = inp%NSW - 1
+    nbas = olap%NBANDS
+
+    do it=1, Nt
+      read(unit=22, fmt=*) (olap%Eig(i,it), i=1,nbas)
+      read(unit=23, fmt='(*(G26.17))') &
+          ((olap%Dij(i,j, it), j=1,nbas), i=1,nbas)
     end do
 
     close(unit=22)
     close(unit=23)
   end subroutine
+
 end module couplings
