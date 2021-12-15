@@ -290,6 +290,7 @@ module couplings
       ! file containing couplings exists, then read it
       if (inp%LCPTXT) then
         call readNaEig(olap_sec, inp)
+        call readSOTXT(olap_sec)
       else
         call CoupFromFile(olap)
         call copyToSec(olap, olap_sec, inp)
@@ -452,6 +453,29 @@ module couplings
 
     do it=1, Nt
       write(unit=24, fmt='(*(G26.17))') &
+          ((olap%Sij(i,j, it), j=1,nbas), i=1,nbas)
+    end do
+
+    close(unit=24)
+  end subroutine
+
+  subroutine readSOTXT(olap)
+    implicit none
+
+    type(overlap), intent(inout) :: olap
+    integer :: i, j, it, Nt, nbas, ierr
+
+    open(unit=24, file='SOTXT', status='unknown', action='read', iostat=ierr)
+    if (ierr /= 0) then
+      write(*,*) "SOTXT does NOT exist!"
+      stop
+    end if
+
+    nbas = olap%NBANDS
+    Nt = olap%TSTEPS - 1
+
+    do it=1, Nt
+      read(unit=24, fmt='(*(G26.17))') &
           ((olap%Sij(i,j, it), j=1,nbas), i=1,nbas)
     end do
 
