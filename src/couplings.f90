@@ -4,6 +4,7 @@ module couplings
   use lattice
   use wavecar
   use fileio
+  use calcsoc
 
   implicit none
 
@@ -248,7 +249,7 @@ module couplings
 
     logical :: lcoup
     integer :: i, j, nsw, ndigit, nb, is, nspin
-    character(len=256) :: fileA, fileB, buf, tmp
+    character(len=256) :: fileA, fileB, buf, tmp, path
     type(waveinfo) :: waveA, waveB
 
     nb = inp%NBANDS
@@ -268,6 +269,11 @@ module couplings
     olap_sec%dt = inp%POTIM
     allocate(olap_sec%Dij(olap_sec%NBANDS, olap_sec%NBANDS, olap_sec%TSTEPS-1))
     allocate(olap_sec%Eig(olap_sec%NBANDS, olap_sec%TSTEPS-1))
+
+    if (inp%SOCTYPE==2) then
+      allocate(olap%Sij(nb*nspin, nb*nspin, olap%TSTEPS-1))
+      allocate(olap_sec%Sij(olap_sec%NBANDS, olap_sec%NBANDS, olap_sec%TSTEPS-1))
+    end if
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     nsw = olap%TSTEPS
@@ -308,10 +314,17 @@ module couplings
                       trim(adjustl(tmp))
           stop
         end if
+
         do is=1, nspin
           call CoupIJ(waveA, waveB, olap%Dij(:,1+nb*(is-1):nb*is,i), is)
           olap%Eig(1+nb*(is-1):nb*is,i) = waveA%BANDS(:,1,is)
         end do
+
+        if (inp%SOCTYPE==2) then
+          write(tmp, buf) i
+          path = trim(rundir) // '/' // trim(adjustl(tmp)) // '/'
+          call calcHmm(trim(path), nb, waveA%NKPTS, 1, olap%Sij(:,:,i))
+        end if
 
         call finishAB(waveA, waveB)
       end do
@@ -358,7 +371,7 @@ module couplings
       olap_sec%Dij(1:nbasU,1:nbasU,:) = olap%Dij(basisU,basisU,:)
       olap_sec%Dij(nbasU+1:nbas,nbasU+1:nbas,:) = &
           olap%Dij(basisD,basisD+nb,:)
-      ! olap_sec%Sij = olap%Sij(basis, basis, :)
+      olap_sec%Sij = olap%Sij(basis, basis, :)
 
       deallocate(basisU, basisD, basis)
 
