@@ -50,7 +50,7 @@ module hamil
     type(overlap), intent(in)  :: olap
     type(namdInfo), intent(in) :: inp
 
-    integer :: i, j, N
+    integer :: i, j, N, istat
 
     ! memory allocation
     ks%ndim = inp%NBASIS
@@ -86,7 +86,18 @@ module hamil
     ! ks%ham_c = cero
     ! ks%ham_p = cero
     ! ks%ham_n = cero
-    ks%psi_c(inp%INIBAND - inp%BMIN + 1) = uno
+
+    if (inp%SOCTYPE==1) then
+      istat = inp%INIBAND - inp%BMIN + 1
+    else if (inp%SOCTYPE==2) then
+      if (inp%INISPIN == 1) then
+        istat = inp%INIBAND - inp%BMINU + 1
+      else
+        istat = inp%INIBAND - inp%BMIND + inp%BMAXU - inp%BMINU + 2
+      end if
+    end if
+
+    ks%psi_c(istat) = uno
 
     do i=1, inp%NAMDTIME
       ! We don't need all the information, only a section of it

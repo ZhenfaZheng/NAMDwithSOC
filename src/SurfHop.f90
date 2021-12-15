@@ -104,7 +104,16 @@ module shop
 
     ks%sh_pops = 0
     ks%sh_prop = 0
-    istat = inp%INIBAND - inp%BMIN + 1
+
+    if (inp%SOCTYPE==1) then
+      istat = inp%INIBAND - inp%BMIN + 1
+    else if (inp%SOCTYPE==2) then
+      if (inp%INISPIN == 1) then
+        istat = inp%INIBAND - inp%BMINU + 1
+      else
+        istat = inp%INIBAND - inp%BMIND + inp%BMAXU - inp%BMINU + 2
+      end if
+    end if
 
     ! initialize the random seed for ramdom number production
     call init_random_seed()
