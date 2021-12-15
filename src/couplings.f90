@@ -22,9 +22,9 @@ module couplings
   subroutine CoupFromFile(olap)
     implicit none
     type(overlap), intent(inout) :: olap
-    integer :: i, j, k, ierr, irec
+    integer :: i, j, k, nb, nspin, Nt, ierr, irec
     integer :: irecordL
-    real(kind=q) :: recordL, rnbands, rnsw, rdt
+    real(kind=q) :: recordL, rnbands, rnsw, rdt, rnspin
     ! to find out the record length
     real(kind=q), allocatable, dimension(:)  :: values
 
@@ -35,12 +35,16 @@ module couplings
       stop
     end if
 
-    read(unit=20,rec=1) recordL, rnbands, rnsw, rdt
+    read(unit=20,rec=1) recordL, rnbands, rnsw, rdt, rnspin
     ! write(*,*) recordL, rnbands, rnsw, rdt
 
-    if (olap%NBANDS /= NINT(rnbands) .or. &
-        olap%TSTEPS /= NINT(rnsw)) then
-      ! write(*,*) olap%NBANDS, NINT(rnbands), olap%TSTEPS, NINT(rnsw)
+    nb = olap%NBANDS
+    nspin = olap%ISPIN
+    Nt = olap%TSTEPS
+
+    if ( nb /= NINT(rnbands) .or. Nt /= NINT(rnsw) &
+        .or. nspin /= NINT(rnspin) ) then
+      ! write(*,*) nb, NINT(rnbands), Nt, NINT(rnsw)
       write(*,*) "The COUPCAR seems to be wrong..."
       stop
     end if
@@ -54,10 +58,15 @@ module couplings
     write(*,'(A)') "------------------------------------------------------------"
     write(*,*) "Reading couplings from COUPCAR..."
     irec = 1
-    do k=1, olap%TSTEPS-1
+    do k=1, Nt-1
       irec = irec + 1
-      read(unit=20, rec=irec) ((olap%Dij(i,j,k), i=1, olap%NBANDS), j=1, olap%NBANDS), &
-                               (olap%Eig(i,k), i=1, olap%NBANDS)
+      if (nspin==1) then
+        read(unit=20, rec=irec) &
+            ((olap%Dij(i,j,k), i=1,nb), j=1,nb), (olap%Eig(i,k), i=1,nb)
+      else if (nspin==2) then
+        read(unit=20, rec=irec) &
+            ((olap%Dij(i,j,k), i=1,nb), j=1,nb*2), (olap%Eig(i,k), i=1,nb*2)
+      end if
     end do
     write(*,*) "Done..."
     write(*,'(A)') "------------------------------------------------------------"
@@ -71,13 +80,21 @@ module couplings
 
     ! Couplings are save to a binary file
     integer :: recordLA, recordLB, recordL
-    integer :: i, j, k, ierr, irec
+    integer :: i, j, k, nb, nspin, ierr, irec
     ! to find out the record length
     real(kind=q), allocatable, dimension(:)  :: valuesA
     complex(kind=q), allocatable, dimension(:)  :: valuesB
 
-    allocate(valuesA(olap%NBANDS))
-    allocate(valuesB(olap%NBANDS * olap%NBANDS))
+    nb = olap%NBANDS
+    nspin = olap%ISPIN
+
+    if (nspin==1) then
+      allocate(valuesA(nb))
+      allocate(valuesB(nb*nb))
+    else if (nspin==2) then
+      allocate(valuesA(nb*nspin))
+      allocate(valuesB(nb*nb*nspin*3))
+    end if
     inquire (iolength=recordLA) valuesA
     inquire (iolength=recordLB) valuesB
     recordL = recordLA + recordLB
@@ -93,13 +110,19 @@ module couplings
 
     irec = 1
     write(unit=20, rec=irec) real(recordL, kind=q),     &
-                             real(olap%NBANDS, kind=q), &
+                             real(nb, kind=q), &
                              real(olap%TSTEPS, kind=q), &
-                             real(olap%dt, kind=q)
+                             real(olap%dt, kind=q),     &
+                             real(nspin, kind=q)
     do k=1, olap%TSTEPS-1
       irec = irec + 1
-      write(unit=20, rec=irec) ((olap%Dij(i,j,k), i=1, olap%NBANDS), j=1, olap%NBANDS), &
-                               (olap%Eig(i,k), i=1, olap%NBANDS)
+      if (nspin==1) then
+        write(unit=20, rec=irec) &
+            ((olap%Dij(i,j,k), i=1,nb), j=1,nb), (olap%Eig(i,k), i=1,nb)
+      else if (nspin==2) then
+        write(unit=20, rec=irec) &
+            ((olap%Dij(i,j,k), i=1,nb), j=1,nb*2), (olap%Eig(i,k), i=1,nb*2)
+      end if
     end do
     close(unit=20)
 
