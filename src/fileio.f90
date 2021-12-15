@@ -16,8 +16,10 @@ module fileio
     integer :: NSW         ! No. of MD steps
     integer :: NAMDTINI    ! Initial time step of NAMD
     integer :: NAMDTIME    ! No. of steps of NAMD
+    integer :: INISPIN     ! Spin component of initial state
     integer, allocatable, dimension(:) :: NAMDTINI_A    ! No. of steps of NAMD
     integer, allocatable, dimension(:) :: INIBAND_A     ! No. of steps of NAMD
+    integer, allocatable, dimension(:) :: INISPIN_A     ! Initial spin of NAMD
     integer :: NTRAJ       ! No. of surface hopping trajectories
     integer :: NELM        ! No. of steps of electron wave propagation
     integer :: NSAMPLE     ! No. of steps of electron wave propagation
@@ -58,7 +60,7 @@ module fileio
       integer :: nbands
       integer :: soctype
       integer :: namdtime
-      ! integer :: namdtini    
+      ! integer :: namdtini
       integer :: ntraj
       integer :: nelm
       integer :: nsample
@@ -118,6 +120,7 @@ module fileio
       read(unit=8, nml=NAMDPARA)
       close(unit=8)
 
+      if (soctype==2) allocate(inp%INISPIN_A(nsample))
       allocate(inp%INIBAND_A(nsample), inp%NAMDTINI_A(nsample))
       inquire(file=tbinit, exist=lext)
       if (.NOT. lext) then
@@ -125,7 +128,12 @@ module fileio
       else
         open(unit=9, file=tbinit, action='read')
         do i=1, nsample
-          read(unit=9,fmt=*) inp%NAMDTINI_A(i), inp%INIBAND_A(i)
+          if (soctype==1) then
+            read(unit=9,fmt=*) inp%NAMDTINI_A(i), inp%INIBAND_A(i)
+          else if (soctype==2) then
+            read(unit=9,fmt=*) &
+             inp%NAMDTINI_A(i), inp%INIBAND_A(i), inp%INISPIN_A(i)
+          end if
         end do
         close(9)
       end if
@@ -190,34 +198,37 @@ module fileio
       write(*,'(A)') "------------------------------------------------------------"
 
       if (inp%SOCTYPE==1) then
-        write(*,'(A30,A3,I5)') 'BMIN',   ' = ', inp%BMIN
-        write(*,'(A30,A3,I5)') 'BMAX',   ' = ', inp%BMAX
+        write(*,'(A30,A3,I5)') 'BMIN',    ' = ', inp%BMIN
+        write(*,'(A30,A3,I5)') 'BMAX',    ' = ', inp%BMAX
+        write(*,'(A30,A3,I5)') 'NBANDS',  ' = ', inp%NBANDS
+        write(*,'(A30,A3,I5)') 'INIBAND', ' = ', inp%INIBAND
+        write(*,'(A30,A3,I5)') 'SOCTYPE', ' = ', inp%SOCTYPE
       else if (inp%SOCTYPE==2) then
-        write(*,'(A30,A3,I5)') 'BMINU',  ' = ', inp%BMINU
-        write(*,'(A30,A3,I5)') 'BMAXU',  ' = ', inp%BMAXU
-        write(*,'(A30,A3,I5)') 'BMIND',  ' = ', inp%BMIND
-        write(*,'(A30,A3,I5)') 'BMAXD',  ' = ', inp%BMAXD
+        write(*,'(A30,A3,I5)') 'BMINU',   ' = ', inp%BMINU
+        write(*,'(A30,A3,I5)') 'BMAXU',   ' = ', inp%BMAXU
+        write(*,'(A30,A3,I5)') 'BMIND',   ' = ', inp%BMIND
+        write(*,'(A30,A3,I5)') 'BMAXD',   ' = ', inp%BMAXD
+        write(*,'(A30,A3,I5)') 'NBANDS',  ' = ', inp%NBANDS
+        write(*,'(A30,A3,I5)') 'INIBAND', ' = ', inp%INIBAND
+        write(*,'(A30,A3,I5)') 'INISPIN', ' = ', inp%INISPIN
+        write(*,'(A30,A3,I5)') 'SOCTYPE', ' = ', inp%SOCTYPE
       end if
 
-      write(*,'(A30,A3,I5)') 'INIBAND',  ' = ', inp%INIBAND
-      write(*,'(A30,A3,I5)') 'NBANDS',   ' = ', inp%NBANDS
-      write(*,'(A30,A3,I5)') 'SOCTYPE',  ' = ', inp%SOCTYPE
+      write(*,'(A30,A3,I5)')   'NSW',     ' = ', inp%NSW
+      write(*,'(A30,A3,F5.1)') 'POTIM',   ' = ', inp%POTIM
+      write(*,'(A30,A3,F5.1)') 'TEMP',    ' = ', inp%TEMP
 
-      write(*,'(A30,A3,I5)')   'NSW',    ' = ', inp%NSW
-      write(*,'(A30,A3,F5.1)') 'POTIM',  ' = ', inp%POTIM
-      write(*,'(A30,A3,F5.1)') 'TEMP',   ' = ', inp%TEMP
+      write(*,'(A30,A3,I5)') 'NAMDTINI',  ' = ', inp%NAMDTINI
+      write(*,'(A30,A3,I5)') 'NAMDTIME',  ' = ', inp%NAMDTIME
+      write(*,'(A30,A3,I5)') 'NTRAJ',     ' = ', inp%NTRAJ
+      write(*,'(A30,A3,I5)') 'NELM',      ' = ', inp%NELM
 
-      write(*,'(A30,A3,I5)') 'NAMDTINI', ' = ', inp%NAMDTINI
-      write(*,'(A30,A3,I5)') 'NAMDTIME', ' = ', inp%NAMDTIME
-      write(*,'(A30,A3,I5)') 'NTRAJ',    ' = ', inp%NTRAJ
-      write(*,'(A30,A3,I5)') 'NELM',     ' = ', inp%NELM
-
-      write(*,'(A30,A3,L5)') 'LHOLE',    ' = ', inp%LHOLE
-      write(*,'(A30,A3,L5)') 'LSHP',     ' = ', inp%LSHP
-      write(*,'(A30,A3,L5)') 'LCPTXT',   ' = ', inp%LCPTXT
-      write(*,'(A30,A3,A)')  'RUNDIR',   ' = ', TRIM(ADJUSTL(inp%rundir))
+      write(*,'(A30,A3,L5)') 'LHOLE',     ' = ', inp%LHOLE
+      write(*,'(A30,A3,L5)') 'LSHP',      ' = ', inp%LSHP
+      write(*,'(A30,A3,L5)') 'LCPTXT',    ' = ', inp%LCPTXT
+      write(*,'(A30,A3,A)')  'RUNDIR',    ' = ', TRIM(ADJUSTL(inp%rundir))
 
       write(*,'(A)') "------------------------------------------------------------"
-    end subroutine 
+    end subroutine
 
 end module

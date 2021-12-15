@@ -88,8 +88,8 @@ module shop
     end if
 
     forall (i=1:ks%ndim, ks%sh_prop(i,tion) < 0) ks%sh_prop(i,tion) = 0
-    ! write(*,*) (ks%Bkm(i), i=1, ks%ndim) 
-    ! write(*,*) (ks%sh_prop(i, tion), i=1, ks%ndim) 
+    ! write(*,*) (ks%Bkm(i), i=1, ks%ndim)
+    ! write(*,*) (ks%sh_prop(i, tion), i=1, ks%ndim)
 
   end subroutine
 
@@ -148,32 +148,35 @@ module shop
     do io = 24, 25
 
       if (inp%SOCTYPE==1) then
-        write(io,'(A,A12,A3,I5)') '#', 'BMIN',   ' = ', inp%BMIN
-        write(io,'(A,A12,A3,I5)') '#', 'BMAX',   ' = ', inp%BMAX
+        write(io,'(A,A12,A3,I5)') '#', 'BMIN',    ' = ', inp%BMIN
+        write(io,'(A,A12,A3,I5)') '#', 'BMAX',    ' = ', inp%BMAX
+        write(io,'(A,A12,A3,I5)') '#', 'NBANDS',  ' = ', inp%NBANDS
+        write(io,'(A,A12,A3,I5)') '#', 'INIBAND', ' = ', inp%INIBAND
+        write(io,'(A,A12,A3,I5)') '#', 'SOCTYPE', ' = ', inp%SOCTYPE
       else if (inp%SOCTYPE==2) then
-        write(io,'(A,A12,A3,I5)') '#', 'BMINU',  ' = ', inp%BMINU
-        write(io,'(A,A12,A3,I5)') '#', 'BMAXU',  ' = ', inp%BMAXU
-        write(io,'(A,A12,A3,I5)') '#', 'BMIND',  ' = ', inp%BMIND
-        write(io,'(A,A12,A3,I5)') '#', 'BMAXD',  ' = ', inp%BMAXD
+        write(io,'(A,A12,A3,I5)') '#', 'BMINU',   ' = ', inp%BMINU
+        write(io,'(A,A12,A3,I5)') '#', 'BMAXU',   ' = ', inp%BMAXU
+        write(io,'(A,A12,A3,I5)') '#', 'BMIND',   ' = ', inp%BMIND
+        write(io,'(A,A12,A3,I5)') '#', 'BMAXD',   ' = ', inp%BMAXD
+        write(io,'(A,A12,A3,I5)') '#', 'NBANDS',  ' = ', inp%NBANDS
+        write(io,'(A,A12,A3,I5)') '#', 'INIBAND', ' = ', inp%INIBAND
+        write(io,'(A,A12,A3,I5)') '#', 'INISPIN', ' = ', inp%INISPIN
+        write(io,'(A,A12,A3,I5)') '#', 'SOCTYPE', ' = ', inp%SOCTYPE
       end if
 
-      write(io,'(A,A12,A3,I5)') '#', 'INIBAND',  ' = ', inp%INIBAND
-      write(io,'(A,A12,A3,I5)') '#', 'NBANDS',   ' = ', inp%NBANDS
-      write(io,'(A,A12,A3,I5)') '#', 'SOCTYPE',  ' = ', inp%SOCTYPE
+      write(io,'(A,A12,A3,I5)')   '#', 'NSW',     ' = ', inp%NSW
+      write(io,'(A,A12,A3,F5.1)') '#', 'POTIM',   ' = ', inp%POTIM
+      write(io,'(A,A12,A3,F5.1)') '#', 'TEMP',    ' = ', inp%TEMP
 
-      write(io,'(A,A12,A3,I5)')   '#', 'NSW',    ' = ', inp%NSW
-      write(io,'(A,A12,A3,F5.1)') '#', 'POTIM',  ' = ', inp%POTIM
-      write(io,'(A,A12,A3,F5.1)') '#', 'TEMP',   ' = ', inp%TEMP
+      write(io,'(A,A12,A3,I5)') '#', 'NAMDTINI',  ' = ', inp%NAMDTINI
+      write(io,'(A,A12,A3,I5)') '#', 'NAMDTIME',  ' = ', inp%NAMDTIME
+      write(io,'(A,A12,A3,I5)') '#', 'NTRAJ',     ' = ', inp%NTRAJ
+      write(io,'(A,A12,A3,I5)') '#', 'NELM',      ' = ', inp%NELM
 
-      write(io,'(A,A12,A3,I5)') '#', 'NAMDTINI', ' = ', inp%NAMDTINI
-      write(io,'(A,A12,A3,I5)') '#', 'NAMDTIME', ' = ', inp%NAMDTIME
-      write(io,'(A,A12,A3,I5)') '#', 'NTRAJ',    ' = ', inp%NTRAJ
-      write(io,'(A,A12,A3,I5)') '#', 'NELM',     ' = ', inp%NELM
-
-      write(io,'(A,A12,A3,L5)') '#', 'LHOLE',    ' = ', inp%LHOLE
-      write(io,'(A,A12,A3,L5)') '#', 'LSHP',     ' = ', inp%LSHP
-      write(io,'(A,A12,A3,L5)') '#', 'LCPTXT',   ' = ', inp%LCPTXT
-      write(io,'(A,A12,A3,A)')  '#', 'RUNDIR',   ' = ', TRIM(ADJUSTL(inp%rundir))
+      write(io,'(A,A12,A3,L5)') '#', 'LHOLE',     ' = ', inp%LHOLE
+      write(io,'(A,A12,A3,L5)') '#', 'LSHP',      ' = ', inp%LSHP
+      write(io,'(A,A12,A3,L5)') '#', 'LCPTXT',    ' = ', inp%LCPTXT
+      write(io,'(A,A12,A3,A)')  '#', 'RUNDIR',    ' = ', TRIM(ADJUSTL(inp%rundir))
     end do
 
     do tion=1, inp%NAMDTIME
