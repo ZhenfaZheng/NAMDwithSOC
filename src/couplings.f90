@@ -66,7 +66,9 @@ module couplings
             ((olap%Dij(i,j,k), i=1,nb), j=1,nb), (olap%Eig(i,k), i=1,nb)
       else if (nspin==2) then
         read(unit=20, rec=irec) &
-            ((olap%Dij(i,j,k), i=1,nb), j=1,nb*2), (olap%Eig(i,k), i=1,nb*2)
+            ((olap%Dij(i,j,k), i=1,nb), j=1,nb*2), &
+            ((olap%Sij(i,j,k), i=1,nb*2), j=1,nb*2), &
+            (olap%Eig(i,k), i=1,nb*2)
       end if
     end do
     write(*,*) "Done..."
@@ -122,7 +124,9 @@ module couplings
             ((olap%Dij(i,j,k), i=1,nb), j=1,nb), (olap%Eig(i,k), i=1,nb)
       else if (nspin==2) then
         write(unit=20, rec=irec) &
-            ((olap%Dij(i,j,k), i=1,nb), j=1,nb*2), (olap%Eig(i,k), i=1,nb*2)
+            ((olap%Dij(i,j,k), i=1,nb), j=1,nb*2), &
+            ((olap%Sij(i,j,k), i=1,nb*2), j=1,nb*2), &
+            (olap%Eig(i,k), i=1,nb*2)
       end if
     end do
     close(unit=20)
