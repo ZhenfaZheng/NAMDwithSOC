@@ -10,9 +10,8 @@ MAKE = make
 # Src
 #-------------------------------------------------------------------------------
 
-SRC = prec.f90 lattice.f90 wave.f90 fileio.f90 couplings.f90 hamil.f90 \
+SRC = prec.f90 lattice.f90 wave.f90 fileio.f90 soc.f90 couplings.f90 hamil.f90 \
    	TimeProp.f90 SurfHop.f90  main.f90
-
 
 OBJ = $(SRC:.f90=.o)
 EXE = namd_soc
@@ -22,6 +21,10 @@ EXE = namd_soc
 #-------------------------------------------------------------------------------
 .SUFFIXES: .o .f90
 .f90.o:
+	$(FC) $(FFLAGS) -c $<
+
+.SUFFIXES: .o .F90
+.F90.o:
 	$(FC) $(FFLAGS) -c $<
 
 #-------------------------------------------------------------------------------
@@ -34,6 +37,6 @@ clean:
 	rm -f *.mod *.a namd
 	rm -f $(OBJ) $(EXE)
 tar:
-	tar -czvf namd.tgz *.f90 Makefile
+	tar -czvf namd_soc.tgz *.f90 *F90 Makefile
 tag:
 	ctags *.f90
