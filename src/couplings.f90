@@ -1,5 +1,6 @@
 module couplings
   use prec
+  use constants
   use lattice
   use wavecar
   use fileio
@@ -62,7 +63,7 @@ module couplings
     write(*,'(A)') "------------------------------------------------------------"
     write(*,*)
     close(20)
-  end subroutine 
+  end subroutine
 
   subroutine CoupToFile(olap)
     implicit none
@@ -102,7 +103,7 @@ module couplings
     end do
     close(unit=20)
 
-  end subroutine 
+  end subroutine
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Calculate Nonadiabatic Couplings From Two WAVECARs
@@ -221,7 +222,7 @@ module couplings
     type(overlap), intent(inout) :: olap
     type(overlap), intent(inout) :: olap_sec
     type(namdInfo), intent(in) :: inp
-    
+
     logical :: lcoup
     integer :: i, j, nsw, ndigit, nb, is, nspin
     character(len=256) :: fileA, fileB, buf, tmp
@@ -302,16 +303,47 @@ module couplings
     deallocate(olap%Dij, olap%Eig)
   end subroutine
 
-  ! subroutine copyToSec(olap, olap_sec, inp)
-  !   implicit none
-  !   type(overlap), intent(inout) :: olap_sec
-  !   type(overlap), intent(in) :: olap
-  !   type(namdInfo), intent(in) :: inp
+  subroutine copyToSec(olap, olap_sec, inp)
+    implicit none
 
-  !   olap_sec%Eig(:,:) = olap%Eig(inp%BMIN:inp%BMAX, :)
-  !   olap_sec%Dij(:,:) = olap%Dij(inp%BMIN:inp%BMAX, inp%BMIN:inp%BMAX, :)
+    type(overlap), intent(in) :: olap
+    type(overlap), intent(inout) :: olap_sec
+    type(namdInfo), intent(in) :: inp
 
-  ! end subroutine
+    integer, allocatable, dimension(:) :: basisU, basisD, basis
+    integer :: i, nbasU, nbasD, nbas, nb
+
+    if (inp%SOCTYPE==1) then
+
+      olap_sec%Eig = olap%Eig(inp%BMIN:inp%BMAX, :)
+      olap_sec%Dij = &
+          olap%Dij(inp%BMIN:inp%BMAX, inp%BMIN:inp%BMAX, :)
+
+    else if (inp%SOCTYPE==2) then
+
+      nb = inp%NBANDS
+      nbasU = inp%BMAXU - inp%BMINU + 1
+      nbasD = inp%BMAXD - inp%BMIND+ 1
+      nbas = nbasU + nbasD
+      allocate(basisU(nbasU))
+      allocate(basisD(nbasD))
+      allocate(basis(nbas))
+      basisU = (/(i, i=inp%BMINU,inp%BMAXU)/)
+      basisD = (/(i, i=inp%BMIND,inp%BMAXD)/)
+      basis = (/basisU,basisD+nb/)
+
+      olap_sec%Dij = cero
+      olap_sec%Eig = olap%Eig(basis,:)
+      olap_sec%Dij(1:nbasU,1:nbasU,:) = olap%Dij(basisU,basisU,:)
+      olap_sec%Dij(nbasU+1:nbas,nbasU+1:nbas,:) = &
+          olap%Dij(basisD,basisD+nb,:)
+      olap_sec%Sij = olap%Sij(basis, basis, :)
+
+      deallocate(basisU, basisD, basis)
+
+    end if
+
+  end subroutine
 
   subroutine writeNaEig(olap, inp)
     implicit none
