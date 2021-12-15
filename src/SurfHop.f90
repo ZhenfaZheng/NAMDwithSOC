@@ -146,10 +146,20 @@ module shop
     end if
 
     do io = 24, 25
-      write(io,'(A,A12,A3,I5)') '#', 'BMIN',     ' = ', inp%BMIN
-      write(io,'(A,A12,A3,I5)') '#', 'BMAX',     ' = ', inp%BMAX
+
+      if (inp%SOCTYPE==1) then
+        write(io,'(A,A12,A3,I5)') '#', 'BMIN',   ' = ', inp%BMIN
+        write(io,'(A,A12,A3,I5)') '#', 'BMAX',   ' = ', inp%BMAX
+      else if (inp%SOCTYPE==2) then
+        write(io,'(A,A12,A3,I5)') '#', 'BMINU',  ' = ', inp%BMINU
+        write(io,'(A,A12,A3,I5)') '#', 'BMAXU',  ' = ', inp%BMAXU
+        write(io,'(A,A12,A3,I5)') '#', 'BMIND',  ' = ', inp%BMIND
+        write(io,'(A,A12,A3,I5)') '#', 'BMAXD',  ' = ', inp%BMAXD
+      end if
+
       write(io,'(A,A12,A3,I5)') '#', 'INIBAND',  ' = ', inp%INIBAND
       write(io,'(A,A12,A3,I5)') '#', 'NBANDS',   ' = ', inp%NBANDS
+      write(io,'(A,A12,A3,I5)') '#', 'SOCTYPE',  ' = ', inp%SOCTYPE
 
       write(io,'(A,A12,A3,I5)')   '#', 'NSW',    ' = ', inp%NSW
       write(io,'(A,A12,A3,F5.1)') '#', 'POTIM',  ' = ', inp%POTIM

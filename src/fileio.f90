@@ -6,6 +6,10 @@ module fileio
   type namdInfo
     integer :: BMIN
     integer :: BMAX
+    integer :: BMINU
+    integer :: BMAXU
+    integer :: BMIND
+    integer :: BMAXD
     integer :: NBASIS      ! No. of adiabatic states as basis
     integer :: NBANDS      ! No. of band of the system
     integer :: INIBAND     ! inititial adiabatic state of excited electron/hole
@@ -45,6 +49,10 @@ module fileio
       ! local variables with the same name as those in "inp"
       integer :: bmin
       integer :: bmax
+      integer :: bminU
+      integer :: bmaxU
+      integer :: bminD
+      integer :: bmaxD
       integer :: nsw
       integer :: iniband
       integer :: nbands
@@ -68,6 +76,8 @@ module fileio
 
 
       namelist /NAMDPARA/ bmin, bmax, nsw,    &
+                          bminU, bmaxU,       &
+                          bminD, bmaxD,       &
                           soctype, nbands,    &
                           potim, ntraj, nelm, &
                           temp, rundir,       &
@@ -83,6 +93,10 @@ module fileio
       tbinit = 'INICON'
       bmin = 0
       bmax = 0
+      bminU = 0
+      bmaxU = 0
+      bminD = 0
+      bmaxD = 0
       nbands = 0
       soctype = 1
       ! iniband = 0
@@ -142,6 +156,10 @@ module fileio
       ! assign the parameters
       inp%BMIN     = bmin
       inp%BMAX     = bmax
+      inp%BMINU    = bminU
+      inp%BMAXU    = bmaxU
+      inp%BMIND    = bminD
+      inp%BMAXD    = bmaxD
       inp%NBASIS   = bmax - bmin + 1
       inp%NSW      = nsw
       inp%NBANDS   = nbands
@@ -157,6 +175,11 @@ module fileio
       inp%POTIM    = potim
       inp%LCPTXT   = lcpext
       inp%TEMP     = temp
+
+      if (inp%SOCTYPE==2) then
+        inp%NBASIS = bmaxU - bminU + bmaxD - bminD + 2
+      end if
+
     end subroutine
 
     ! Need a subroutine to print out all the input parameters
@@ -165,11 +188,19 @@ module fileio
       type(namdInfo), intent(in) :: inp
 
       write(*,'(A)') "------------------------------------------------------------"
-      write(*,'(A30,A3,I5)') 'BMIN',     ' = ', inp%BMIN
-      write(*,'(A30,A3,I5)') 'BMAX',     ' = ', inp%BMAX
+
+      if (inp%SOCTYPE==1) then
+        write(*,'(A30,A3,I5)') 'BMIN',   ' = ', inp%BMIN
+        write(*,'(A30,A3,I5)') 'BMAX',   ' = ', inp%BMAX
+      else if (inp%SOCTYPE==2) then
+        write(*,'(A30,A3,I5)') 'BMINU',  ' = ', inp%BMINU
+        write(*,'(A30,A3,I5)') 'BMAXU',  ' = ', inp%BMAXU
+        write(*,'(A30,A3,I5)') 'BMIND',  ' = ', inp%BMIND
+        write(*,'(A30,A3,I5)') 'BMAXD',  ' = ', inp%BMAXD
+      end if
+
       write(*,'(A30,A3,I5)') 'INIBAND',  ' = ', inp%INIBAND
       write(*,'(A30,A3,I5)') 'NBANDS',   ' = ', inp%NBANDS
-
       write(*,'(A30,A3,I5)') 'SOCTYPE',  ' = ', inp%SOCTYPE
 
       write(*,'(A30,A3,I5)')   'NSW',    ' = ', inp%NSW
