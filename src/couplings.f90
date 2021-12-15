@@ -110,10 +110,11 @@ module couplings
   !                                 (<psi_i(t)|psi_j(t+dt)> -
   !                                  <psi_j(t)|psi_i(t+dt)>) / (2dt)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine CoupIJ(waveA, waveB, Cij)
+  subroutine CoupIJ(waveA, waveB, Cij, is)
     implicit none
 
     type(waveinfo), intent(in) :: waveA, waveB
+    integer, intent(in) :: is
 
     integer :: s, i, j, dbs
     type(psi) :: ket
@@ -121,24 +122,22 @@ module couplings
     ! The coupling as defined above is a real number
     complex(kind=q), dimension(:,:), intent(inout)  :: Cij
     ! stores plane wave coefficients of the wavefunctions
-    complex(kind=qs), allocatable, dimension(:,:,:) :: crA
-    complex(kind=qs), allocatable, dimension(:,:,:) :: crB
+    complex(kind=qs), allocatable, dimension(:,:) :: crA
+    complex(kind=qs), allocatable, dimension(:,:) :: crB
     complex(kind=q) :: pij, pji
 
-    allocate(crA(waveA%NPLWS(1), waveA%NBANDS, waveA%ISPIN))
-    allocate(crB(waveB%NPLWS(1), waveB%NBANDS, waveB%ISPIN))
+    allocate(crA(waveA%NPLWS(1), waveA%NBANDS))
+    allocate(crB(waveB%NPLWS(1), waveB%NBANDS))
 
     ! read in all the wavefunctions
     ! the Gamma point WAVECAR has only ONE kpoint
-    do s=1, waveA%ISPIN
-      do i=1, waveA%NBANDS
+    do i=1, waveA%NBANDS
         ! i-th band, firtst kpoint, first spin
-        call setKet(ket, i, 1, s)
+        call setKet(ket, i, 1, is)
         ! the coefficients are normalized in the LOADWAVE subroutine
         ! here, we don't have to worry about normalization problem
-        call LOADWAVE(crA(:,i,s), ket, waveA)
-        call LOADWAVE(crB(:,i,s), ket, waveB)
-      end do
+        call LOADWAVE(crA(:,i), ket, waveA)
+        call LOADWAVE(crB(:,i), ket, waveB)
     end do
 
     ! Initialization
@@ -146,24 +145,19 @@ module couplings
 
     ! <psi_i(t)| d/dt |(psi_j(t))> ~=~
     !                             (<psi_i(t)|psi_j(t+dt)> - <psi_j(t)|psi_i(t+dt)>) / (2dt)
-    write(*,*) "#", trim(waveA%WAVECAR)
+    if (is==1) write(*,*) "#", trim(waveA%WAVECAR)
     do i=1, waveA%NBANDS
       ! write(*,*) "C_ZERO: ", REAL(crA(1,i)), AIMAG(crA(1,i))
       do j=i, waveA%NBANDS
-
-        do s=1, waveA%ISPIN
-          dbs = waveA%NBANDS * (s-1)
-          ! <psi_i(t)|psi_j(t+dt)>
-          pij = SUM(CONJG(crA(:,i,s)) * crB(:,j,s))
-          ! <psi_j(t)|psi_i(t+dt)>
-          pji = SUM(CONJG(crB(:,i,s)) * crA(:,j,s))
-          ! Not devided by 2 * dt
-          Cij(i, j+dbs) = pij - pji
-          if ( i /= j ) then
-            Cij(j, i+dbs) = -CONJG(Cij(i, j+dbs))
-          end if
-        end do
-
+        ! <psi_i(t)|psi_j(t+dt)>
+        pij = SUM(CONJG(crA(:,i)) * crB(:,j))
+        ! <psi_j(t)|psi_i(t+dt)>
+        pji = SUM(CONJG(crB(:,i)) * crA(:,j))
+        ! Not devided by 2 * dt
+        Cij(i, j) = pij - pji
+        if ( i /= j ) then
+          Cij(j, i) = -CONJG(Cij(i, j))
+        end if
       end do
     end do
 
@@ -229,9 +223,12 @@ module couplings
     type(namdInfo), intent(in) :: inp
     
     logical :: lcoup
-    integer :: i, j, nsw, ndigit
+    integer :: i, j, nsw, ndigit, nb, is, nspin
     character(len=256) :: fileA, fileB, buf, tmp
     type(waveinfo) :: waveA, waveB
+
+    nb = inp%NBANDS
+    nspin = inp%SOCTYPE
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Initialization
@@ -288,8 +285,10 @@ module couplings
                       trim(adjustl(tmp))
           stop
         end if
-        call CoupIJ(waveA, waveB, olap%Dij(:,:,i))
-        olap%Eig(:,i) = waveA%BANDS(:,1,1)
+        do is=1, nspin
+          call CoupIJ(waveA, waveB, olap%Dij(:,1+nb*(is-1):nb*is,i), is)
+          olap%Eig(1+nb*(is-1):nb*is,i) = waveA%BANDS(:,1,is)
+        end do
 
         call finishAB(waveA, waveB)
       end do
