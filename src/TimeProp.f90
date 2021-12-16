@@ -54,6 +54,10 @@ module TimeProp
       ! write(*,*) "T_ion ", tion, fin - start
 
     end do
+    tion = inp%NAMDTIME
+    ks%pop_a(:,tion) = CONJG(ks%psi_c) * ks%psi_c
+    ks%norm(tion) = SUM(ks%pop_a(:,tion))
+    ks%psi_a(:,tion) = ks%psi_c
     ! end of the OUTER loop
   end subroutine
 
