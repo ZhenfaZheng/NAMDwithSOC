@@ -69,6 +69,9 @@ module hamil
 
       allocate(ks%eigKs(N, inp%NAMDTIME))
       allocate(ks%NAcoup(N,N, inp%NAMDTIME))
+      if (inp%SOCTYPE==2) then
+        allocate(ks%SOcoup(N,N, inp%NAMDTIME))
+      end if
 
       allocate(ks%sh_pops(N, inp%NAMDTIME))
       allocate(ks%sh_prop(N, inp%NAMDTIME))
@@ -105,6 +108,10 @@ module hamil
       ! Divide by 2 * POTIM here, because we didn't do this in the calculation
       ! of couplings
       ks%NAcoup(:,:,i) = olap%Dij(:,:, inp%NAMDTINI + i - 1) / (2*inp%POTIM)
+      if (inp%SOCTYPE==2) then
+        ks%SOcoup(:,:,i) = olap%Sij(:,:, inp%NAMDTINI + i - 1)
+      end if
+
     end do
 
   end subroutine
@@ -125,15 +132,20 @@ module hamil
 
     ! The non-adiabatic coupling part
     ks%ham_c(:,:) = ks%NAcoup(:,:,TION) + &
-                   (ks%NAcoup(:,:,TION+1) - ks%NAcoup(:,:,TION)) * TELE / inp%NELM
+        (ks%NAcoup(:,:,TION+1) - ks%NAcoup(:,:,TION)) * TELE / inp%NELM
 
     ! multiply by -i * hbar
     ks%ham_c = -imgUnit * hbar * ks%ham_c 
     
+    if (inp%SOCTYPE==2) then
+      ks%ham_c(:,:) = ks%ham_c(:,:) + ks%SOcoup(:,:,TION) + &
+        (ks%SOcoup(:,:,TION+1) - ks%SOcoup(:,:,TION)) * TELE / inp%NELM
+    end if
+
     ! the energy eigenvalue part
     do i=1, ks%ndim
       ks%ham_c(i,i) = ks%ham_c(i,i) + ks%eigKs(i,TION) + &
-                     (ks%eigKs(i,TION+1) - ks%eigKs(i,TION)) * TELE / inp%NELM
+        (ks%eigKs(i,TION+1) - ks%eigKs(i,TION)) * TELE / inp%NELM
     end do
   end subroutine
 
