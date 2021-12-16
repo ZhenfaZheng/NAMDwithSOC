@@ -66,10 +66,19 @@ module shop
     real(kind=q) :: dE, kbT
 
     Akk = CONJG(ks%psi_a(cstat, tion)) * ks%psi_a(cstat, tion)
-    ! Bkm = REAL(CONJG(Akm) * Ckm)
-    ! P(k -> m) = 2 Re [ CONJG(C_k) * C_m * d_km ] / ( CONJG(C_k) * C_k )
-    ks%Bkm = 2. * REAL(CONJG(ks%psi_a(cstat, tion)) * ks%psi_a(:, tion) * &
-                    ks%NAcoup(cstat, :, tion))
+
+    if (inp%SOCTYPE==1) then
+      ! P(k -> m) = 2 Re [ CONJG(C_k) * C_m * d_km ] / ( CONJG(C_k) * C_k )
+      ks%Bkm = 2. * REAL(  CONJG(ks%psi_a(cstat, tion)) * ks%psi_a(:, tion) * &
+                           ks%NAcoup(cstat, :, tion) )
+    else if (inp%SOCTYPE==2) then
+      ! P(k -> m) = 2 Re [ CONJG(C_k) * C_m * d_km ] / ( CONJG(C_k) * C_k ) &
+      !    - 2 / hbar Im [ CONJG(C_k) * C_m * S_km ] / ( CONJG(C_k) * C_k )
+      ks%Bkm = 2. * REAL(  CONJG(ks%psi_a(cstat, tion)) * ks%psi_a(:, tion) * &
+                           ks%NAcoup(cstat, :, tion) ) &
+             - 2. * AIMAG( CONJG(ks%psi_a(cstat, tion)) * ks%psi_a(:, tion) * &
+                           ks%SOcoup(cstat, :, tion) / hbar )
+    end if
 
     ks%sh_prop(:,tion) = ks%Bkm / Akk * inp%POTIM
 
