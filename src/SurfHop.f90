@@ -85,14 +85,18 @@ module shop
     kbT = inp%TEMP * BOLKEV
 
     if (inp%LHOLE) then
-      do i = 1, cstat
+      do i=1, ks%ndim
         dE = ks%eigKs(cstat, tion) - ks%eigKs(i,tion)
-        ks%sh_prop(i,tion) = ks%sh_prop(i,tion) * exp(-dE / kbT)
+        if (dE>0) then
+          ks%sh_prop(i,tion) = ks%sh_prop(i,tion) * exp(-dE / kbT)
+        end if
       end do
     else
-      do i=cstat, ks%ndim
+      do i=1, ks%ndim
         dE = ks%eigKs(i,tion) - ks%eigKs(cstat, tion)
-        ks%sh_prop(i,tion) = ks%sh_prop(i,tion) * exp(-dE / kbT)
+        if (dE>0) then
+          ks%sh_prop(i,tion) = ks%sh_prop(i,tion) * exp(-dE / kbT)
+        end if
       end do
     end if
 
