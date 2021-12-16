@@ -1,7 +1,9 @@
 &NAMDPARA
   BMIN       = 343
-  BMAX       = 366 
+  BMAX       = 366
   NBANDS     = 416
+
+  SOCTYPE    = 1
 
   NSW        = 2000
   POTIM      = 1
