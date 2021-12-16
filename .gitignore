@@ -8,3 +8,4 @@ src/namd_soc
 
 # ignore test folder
 test
+examples

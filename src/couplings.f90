@@ -290,12 +290,12 @@ module couplings
       ! file containing couplings exists, then read it
       if (inp%LCPTXT) then
         call readNaEig(olap_sec, inp)
-        call readSOTXT(olap_sec)
+        if (inp%SOCTYPE==2) call readSOTXT(olap_sec)
       else
         call CoupFromFile(olap)
         call copyToSec(olap, olap_sec, inp)
         call writeNaEig(olap_sec, inp)
-        call writeSOTXT(olap_sec)
+        if (inp%SOCTYPE==2) call writeSOTXT(olap_sec)
       end if
     else
       ! create the couplings from the wavefunctions
@@ -338,7 +338,7 @@ module couplings
       call CoupToFile(olap)
       call copyToSec(olap, olap_sec, inp)
       call writeNaEig(olap_sec, inp)
-      call writeSOTXT(olap_sec)
+      if (inp%SOCTYPE==2) call writeSOTXT(olap_sec)
     end if
 
     deallocate(olap%Dij, olap%Eig)
