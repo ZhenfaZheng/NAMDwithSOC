@@ -3,8 +3,8 @@
 #-------------------------------------------------------------------------------
 FC= ifort -assume byterecl
 FC= gfortran
-#FFLAGS= -g -O2
-FFLAGS= -g -O2 -DZZF_VERSION
+FFLAGS= -g -O2
+#FFLAGS= -g -O2 -DZZF_VERSION
 MAKE = make
 
 #-------------------------------------------------------------------------------
