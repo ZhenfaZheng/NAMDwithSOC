@@ -14,6 +14,7 @@ module fileio
     integer :: NBANDS      ! No. of band of the system
     integer :: INIBAND     ! inititial adiabatic state of excited electron/hole
     integer :: NSW         ! No. of MD steps
+    integer :: NBEG        ! Begin of MD steps for calculating couplings
     integer :: NAMDTINI    ! Initial time step of NAMD
     integer :: NAMDTIME    ! No. of steps of NAMD
     integer :: INISPIN     ! Spin component of initial state
@@ -56,6 +57,7 @@ module fileio
       integer :: bminD
       integer :: bmaxD
       integer :: nsw
+      integer :: nbeg
       integer :: iniband
       integer :: nbands
       integer :: soctype
@@ -77,15 +79,12 @@ module fileio
       character(len=256) :: tbinit
 
 
-      namelist /NAMDPARA/ bmin, bmax, nsw,    &
-                          bminU, bmaxU,       &
-                          bminD, bmaxD,       &
-                          soctype, nbands,    &
-                          potim, ntraj, nelm, &
-                          temp, rundir,       &
-                          lhole, lshp, lcpext,&
-                          namdtime,           &
-                          nsample, tbinit
+      namelist /NAMDPARA/ &
+          bmin, bmax, nsw, nbeg, nbands, &
+          bminU, bmaxU, bminD, bmaxD, &
+          soctype, potim, ntraj, nelm, &
+          temp, rundir, lhole, lshp, lcpext, &
+          namdtime, nsample, tbinit
 
       integer :: ierr, i
       logical :: lext
@@ -99,6 +98,7 @@ module fileio
       bmaxU = 0
       bminD = 0
       bmaxD = 0
+      nbeg = 0
       nbands = 0
       soctype = 1
       ! iniband = 0
@@ -170,6 +170,7 @@ module fileio
       inp%BMAXD    = bmaxD
       inp%NBASIS   = bmax - bmin + 1
       inp%NSW      = nsw
+      inp%NBEG     = nbeg
       inp%NBANDS   = nbands
       inp%SOCTYPE  = soctype
       inp%NAMDTIME = namdtime
