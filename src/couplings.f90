@@ -286,6 +286,14 @@ module couplings
     write(buf,*) '(I0.', ndigit, ')'
 
     inquire(file='COUPCAR', exist=lcoup)
+
+    if (lcoup .AND. (inp%NBEG>0)) then
+      olap%TSTEPS = inp%NBEG
+      call CoupFromFile(olap)
+      olap%TSTEPS = inp%NSW
+      lcoup = .False.
+    end if
+
     if (lcoup) then
       ! file containing couplings exists, then read it
       if (inp%LCPTXT) then
@@ -302,6 +310,9 @@ module couplings
       write(*,*)
       write(*,'(A)') "------------------------------------------------------------"
       do i=1, nsw-1
+
+        if (i < inp%NBEG) cycle
+
         ! wavefunction at t
         write(tmp, buf) i
         fileA = trim(rundir) // '/' // trim(adjustl(tmp)) // '/WAVECAR'

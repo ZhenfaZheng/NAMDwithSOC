@@ -18,7 +18,7 @@ Program main
   integer :: ns
 
   write(*,*)
-  write(*,*) "Hefei-NAMD (soc version 1.4.0, May 13, 2022)"
+  write(*,*) "Hefei-NAMD (soc version 1.4.1, May 16, 2022)"
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! First, get user inputs
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -36,6 +36,7 @@ Program main
   ! is done in the subroutine 'initTDKS'.
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   call TDCoupIJ(trim(inp%rundir), olap, olap_sec, inp)
+  if (inp%NBEG>0) stop
   ! write(*,*) "T_coup: ", fin - start
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   do ns=1, inp%NSAMPLE
