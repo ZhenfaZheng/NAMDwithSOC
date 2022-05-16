@@ -284,6 +284,10 @@ module couplings
     write(buf,*) nsw
     ndigit = len_trim(adjustl(buf))
     write(buf,*) '(I0.', ndigit, ')'
+    if (inp%NBEG>0) then
+      call getNdigit(ndigit, inp)
+      write(buf,*) '(I0.', ndigit, ')'
+    end if
 
     inquire(file='COUPCAR', exist=lcoup)
 
@@ -353,6 +357,28 @@ module couplings
     end if
 
     deallocate(olap%Dij, olap%Eig)
+  end subroutine
+
+  subroutine getNdigit(ndigit, inp)
+    implicit none
+
+    integer, intent(inout) :: ndigit
+    type(namdInfo), intent(in) :: inp
+
+    integer :: i
+    logical :: lwav
+    character(len=256) :: fileWAV, buf, tmp, path
+
+    do i=0,10
+      write(buf,*) '(I0.', ndigit+i, ')'
+      write(tmp, buf) inp%NSW
+      fileWAV = trim(inp%rundir) // '/' // trim(adjustl(tmp)) // '/WAVECAR'
+      inquire(file=fileWAV, exist=lwav)
+      if (lwav) exit
+    end do
+
+    if (i<10) ndigit = ndigit + i
+
   end subroutine
 
   subroutine copyToSec(olap, olap_sec, inp)
