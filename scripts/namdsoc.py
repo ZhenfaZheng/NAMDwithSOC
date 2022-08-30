@@ -22,6 +22,7 @@ def main():
     # Whether to reload band information from run directory.
     pathD = 'Data/'
     # The data will be saved in this directory.
+    # if ldata = False, will read data in pathD.
 
     #######################################################################
 
@@ -157,9 +158,9 @@ def loadData(inp, pathD='Data', atomsA=None, atomsB=None):
 
     stype = int(inp['SOCTYPE'])
     if stype==2:
-        W = np.zeros_like(E, dtype=float)
+        W = np.ones_like(E, dtype=float)
         n = int( E.shape[1] / 2 )
-        W[:,:n] = -1.0
+        W[:,n:] = -1.0
 
     else:
         print('\nReading weight from PROCAR...\n')
@@ -296,8 +297,8 @@ def ReadWeight(path, atomsA, atomsB, whichK, Ns, wtype):
 def data_proc(inp, pathD, filshps):
 
     if not filshps:
-        print("\nERROR: filshps is none!")
-        return
+        print("\nERROR: SHPROP files are not found!\n")
+        os._exit(0)
 
     path = os.path.join(pathD, 'energy.dat')
     energy = np.loadtxt(path)
@@ -324,13 +325,13 @@ def data_proc(inp, pathD, filshps):
         bandsD = np.arange(bminD-1, bmaxD)
         nbands = int(inp['NBANDS'])
         bands = np.hstack((bandsU, bandsD + nbands))
-        weight[:,:nbands] = 1.0
-        weight[:,nbands:] = 0.0
+        weight[:,:nbands] =  1.0
+        weight[:,nbands:] = -1.0
 
     energy = energy[:, bands]
     weight = weight[:, bands]
 
-    if (weight.min() < 0): weight = weight / 2.0 + 0.5
+    # if (weight.min() > 0): weight = weight * 2.0 - 1.0
 
     nsample = len(filshps)
 
@@ -407,9 +408,15 @@ def plot_tden(shp, ksen, cw=None, figname='TDEN.png'):
     else:
         cmap = 'bwr'
         cpop = cw
-        cmin = 0.0; cmax = 1.0
+        cmin = -1.0; cmax = 1.0
+        aa = np.abs(cw.min())
+        bb = np.abs(cw.max())
+        if aa > bb:
+            cmin = -aa; cmax = aa
+        else:
+            cmin = -bb; cmax = bb
 
-    dotsize = 20
+    dotsize = 5
     namdtime = shp[-1,0]
     nts = shp.shape[0]
     nbands = shp.shape[1] -2
@@ -443,7 +450,7 @@ def plot_tdpop(shp, cw, figname='TDPOP.png'):
     mpl.rcParams['axes.unicode_minus'] = False
 
     time = shp[:,0]
-    pop = np.sum(cw, axis=1)
+    pop = np.sum(cw, axis=1) / 2.0 + 0.5
 
     lbs = ['Component 1', 'Component 2']
     ax.plot(time,   pop, 'r', lw=1.0, label=lbs[0])
