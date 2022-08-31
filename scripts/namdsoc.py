@@ -12,21 +12,27 @@ def main():
     #                       Basic parameters setting                      #
     #######################################################################
 
-    which_plt = [1, 2, 3]
+    which_plt = [1, 2, 3, 4]
     '''
     Select which figures to plot.
     1: COUPLE_NA.png (COUPLE_SO.png); 2: TDEN.png; 3: TDPOP.png.
+    4: TDKSEN.png
     '''
 
     ldata = True
-    # Whether to reload band information from run directory.
     pathD = 'Data/'
-    # The data will be saved in this directory.
-    # if ldata = False, will read data in pathD.
+    '''
+    if ldata=True, will extract band information from run directory,
+    then create folder pathD, and save the data in pathD directory.
+    if ldata=False, will read data from pathD.
+    '''
 
     #######################################################################
 
     inp = read_inp('inp')
+
+    if ldata and (not which_plt==[1]):
+        loadData(inp, pathD)
 
     if (1 in which_plt):
 
@@ -51,7 +57,6 @@ def main():
 
 
     if (2 in which_plt) or (3 in which_plt):
-        if ldata: loadData(inp, pathD)
         filshps = glob('SHPROP.*')
         shp, ksen, cw = data_proc(inp, pathD, filshps)
 
@@ -60,6 +65,9 @@ def main():
 
     if (3 in which_plt):
         plot_tdpop(shp, cw, figname='TDPOP.png')
+
+    if (4 in which_plt):
+        plot_tdksen(pathD, emin=-2.0, emax=3.0, figname='TDKSEN.png')
 
     print("\nDone!\n")
 
@@ -200,7 +208,7 @@ def loadData(inp, pathD='Data', atomsA=None, atomsB=None):
     path = os.path.join(pathD, 'average.dat')
     np.savetxt(path,average,fmt="%12.6f")
 
-    print('\nDONE!\n')
+    print('\nBand energy information have been saved!')
 
 
 def ReadNs(path):
@@ -460,6 +468,53 @@ def plot_tdpop(shp, cw, figname='TDPOP.png'):
     ax.set_xlim(0, namdtime)
     ax.set_xlabel('Time (fs)')
     ax.set_ylabel('Population')
+
+    plt.tight_layout()
+    plt.savefig(figname, dpi=400)
+    print("\n%s has been saved."%figname)
+
+
+def plot_tdksen(pathD, emin, emax, potim=1.0, figname='TDKSEN.png'):
+
+    path = os.path.join(pathD, 'energy.dat')
+    energy = np.loadtxt(path)
+
+    path = os.path.join(pathD, 'weight.dat')
+    weight = np.loadtxt(path)
+
+    path = os.path.join(pathD, 'fermi.dat')
+    fermi  = np.loadtxt(path)
+
+    Eref = np.average(fermi)
+    energy -= Eref;
+
+    avgE = np.average(energy, axis=0)
+
+    figsize_x = 4.8
+    figsize_y = 3.2 # in inches
+    fig, ax = plt.subplots()
+    fig.set_size_inches(figsize_x, figsize_y)
+    mpl.rcParams['axes.unicode_minus'] = False
+
+    E    = energy.T[(avgE>emin) & (avgE<emax)].T
+    cpop = weight.T[(avgE>emin) & (avgE<emax)].T
+
+    nsw = E.shape[0]
+    nbs = E.shape[1]
+
+    T = np.mgrid[0:nsw, 0:nbs][0] * potim
+
+    cmap = 'bwr'
+    cmin = -1; cmax = 1
+    norm = mpl.colors.Normalize(cmin,cmax)
+
+    ax.scatter(T, E, c=cpop, s=1, lw=0.0, alpha=1.0,
+               norm=norm, cmap=cmap)
+
+    ax.set_ylim(emin, emax)
+    ax.set_xlim(0, nsw*potim)
+    ax.set_xlabel('Time (fs)')
+    ax.set_ylabel('Energy (eV)')
 
     plt.tight_layout()
     plt.savefig(figname, dpi=400)
