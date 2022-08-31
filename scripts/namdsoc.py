@@ -85,16 +85,44 @@ def read_inp(infile='inp'):
     Returns: dictionary, the keys and values are all strings.
     '''
 
+    inp = default_inp()
     text = [line for line in open(infile) if line.strip()]
 
-    inp = {}
     for line in text:
         if (line[0]=='&' or line[0]=='/' or line[0]=='!'):
             continue
         temp = line.split('=')
-        key = temp[0].strip()
+        key = temp[0].strip().upper()
         value = temp[1].strip().strip('\'').strip('\"')
         inp[key] = value
+
+    return inp
+
+
+def default_inp():
+
+    inp = { # set default values
+           'BMIN'     : '0',
+           'BMAX'     : '0',
+           'BMINU'    : '0',
+           'BMAXU'    : '0',
+           'BMIND'    : '0',
+           'BMAXD'    : '0',
+           'NBASIS'   : '1',
+           'NBEG'     : '0',
+           'NBANDS'   : '0',
+           'SOCTYPE'  : '1',
+           'NTRAJ'    : '1000',
+           'NELM'     : '1000',
+           'LHOLE'    : '.FALSE.',
+           'LSHP'     : '.TRUE.',
+           'NAMDTIME' : '200',
+           'POTIM'    : '1.0',
+           'TEMP'     : '300',
+           'RUNDIR'   : 'run',
+           'LCPEXT'   : '.FALSE.',
+           'TBINIT'   : 'INICON'
+          }
 
     return inp
 
@@ -508,13 +536,14 @@ def plot_tdksen(pathD, emin, emax, potim=1.0, figname='TDKSEN.png'):
     cmin = -1; cmax = 1
     norm = mpl.colors.Normalize(cmin,cmax)
 
-    ax.scatter(T, E, c=cpop, s=1, lw=0.0, alpha=1.0,
+    sc = ax.scatter(T, E, c=cpop, s=1, lw=0.0, alpha=1.0,
                norm=norm, cmap=cmap)
 
     ax.set_ylim(emin, emax)
     ax.set_xlim(0, nsw*potim)
     ax.set_xlabel('Time (fs)')
     ax.set_ylabel('Energy (eV)')
+    cbar = plt.colorbar(sc)
 
     plt.tight_layout()
     plt.savefig(figname, dpi=400)
