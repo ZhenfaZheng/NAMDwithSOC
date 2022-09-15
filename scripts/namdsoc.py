@@ -378,9 +378,14 @@ def data_proc(inp, pathD, filshps):
         c = shp[:, 2:]
 
         if ii==0:
+            nsw = energy.shape[0]
             nts = shp.shape[0]
             namdtime = shp[-1,0]
             potim = namdtime / nts
+
+            Ncycle = int(nts / nsw) + 1
+            energy = np.tile(energy, (Ncycle, 1))
+            weight = np.tile(weight, (Ncycle, 1))
 
         it1 = int( float(fil.split('.')[-1]) / potim ) - 1
         it2 = it1 + nts

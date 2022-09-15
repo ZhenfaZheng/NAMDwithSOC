@@ -103,13 +103,15 @@ module hamil
     ks%psi_c(istat) = uno
 
     do i=1, inp%NAMDTIME
+      j = int( mod(inp%NAMDTINI+i-1, inp%NSW-1) )
+      if (j==0) j = inp%NSW - 1
       ! We don't need all the information, only a section of it
-      ks%eigKs(:,i) = olap%Eig(:, inp%NAMDTINI + i - 1)
+      ks%eigKs(:,i) = olap%Eig(:, j)
       ! Divide by 2 * POTIM here, because we didn't do this in the calculation
       ! of couplings
-      ks%NAcoup(:,:,i) = olap%Dij(:,:, inp%NAMDTINI + i - 1) / (2*inp%POTIM)
+      ks%NAcoup(:,:,i) = olap%Dij(:,:, j) / (2*inp%POTIM)
       if (inp%SOCTYPE==2) then
-        ks%SOcoup(:,:,i) = olap%Sij(:,:, inp%NAMDTINI + i - 1)
+        ks%SOcoup(:,:,i) = olap%Sij(:,:, j)
       end if
 
     end do
