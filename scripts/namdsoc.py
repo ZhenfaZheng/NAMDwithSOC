@@ -27,12 +27,25 @@ def main():
     if ldata=False, will read data from pathD.
     '''
 
+    lspinw = True
+    atomsA = range(8) # indice-1 of atoms
+    atomsB = range(8,32)
+    '''
+    For lada=True, will extract spin or spatial weight from PROCAR.
+    if lspinw = True, extract spin weight, atomsA & atomsB will be ignored!
+    if lspinw = False, extract spatial weight, you MUST set indice of atoms
+        for two component!
+    '''
+
     #######################################################################
 
     inp = read_inp('inp')
 
     if ldata and (not which_plt==[1]):
-        loadData(inp, pathD)
+        if lspinw:
+            loadData(inp, pathD)
+        else:
+            loadData(inp, pathD, atomsA, atomsB)
 
     if (1 in which_plt):
 
@@ -61,13 +74,16 @@ def main():
         shp, ksen, cw = data_proc(inp, pathD, filshps)
 
     if (2 in which_plt):
-        plot_tden(shp, ksen, cw=cw, figname='TDEN.png')
+        if lspinw:
+            plot_tden(shp, ksen, cw=cw, figname='TDEN.png')
+        else:
+            plot_tden(shp, ksen, figname='TDEN.png')
 
     if (3 in which_plt):
-        plot_tdpop(shp, cw, figname='TDPOP.png')
+        plot_tdpop(shp, cw, lspinw, figname='TDPOP.png')
 
     if (4 in which_plt):
-        plot_tdksen(pathD, emin=-2.0, emax=3.0, figname='TDKSEN.png')
+        plot_tdksen(pathD, lspinw, emin=-2.0, emax=3.0, figname='TDKSEN.png')
 
     print("\nDone!\n")
 
@@ -191,19 +207,42 @@ def loadData(inp, pathD='Data', atomsA=None, atomsB=None):
             print('%6d OUTCARs have been read.'%(ii+1))
 
     E = np.array(E); Ef = np.array(Ef)
-
     stype = int(inp['SOCTYPE'])
-    if stype==2:
-        W = np.ones_like(E, dtype=float)
-        n = int( E.shape[1] / 2 )
-        W[:,n:] = -1.0
+
+    if (atomsA is None) or (atomsB is None):
+
+        if stype==1:
+            print('\nReading spin weight from PROCAR...\n')
+
+            wtype = 33
+            # 31, 32, 33: spin weight for x, y and z directions,
+            # respectively. (For VASP_ncl)
+
+            W = []
+            for ii in range(nsw):
+                fil = '{:0>{width}}'.format(ii+1, width=ndigit)
+                path = os.path.join(pathrun, fil)
+                weight = ReadWeight(path, atomsA, atomsB, whichK, Ns, wtype)
+                W.append(weight)
+
+                if (ii+1) % (nsw//10) == 0:
+                    print('%6d PROCARs have been read.'%(ii+1))
+
+            W = np.array(W)
+
+        else:
+            W = np.ones_like(E, dtype=float)
+            n = int( E.shape[1] / 2 )
+            W[:,n:] = -1.0
 
     else:
-        print('\nReading weight from PROCAR...\n')
 
-        wtype = 33
-        # 31, 32, 33: spin weight for x, y and z directions,
-        # respectively. (For VASP_ncl)
+        if stype==1:
+            wtype = 2
+        else:
+            wtype = 1
+
+        print('\nReading spatial weight from PROCAR...\n')
 
         W = []
         for ii in range(nsw):
@@ -216,6 +255,7 @@ def loadData(inp, pathD='Data', atomsA=None, atomsB=None):
                 print('%6d PROCARs have been read.'%(ii+1))
 
         W = np.array(W)
+
 
     if not os.path.exists(pathD):
         os.mkdir(pathD)
@@ -289,7 +329,7 @@ def ReadEnergy(path, whichK, Ns):
 def ReadWeight(path, atomsA, atomsB, whichK, Ns, wtype):
     '''
     Read weight of atomsA in atomsA & atomsB of each orbital from PROCAR.
-    wtype = 1 or 31, 32, 33
+    wtype = 1, 2 or 31, 32, 33
     1: spatial weight, need to set parameters atomsA/B bellow.
     31, 32, 33: spin weight for x, y and z directions, respectively. (For VASP_ncl)
     '''
@@ -302,6 +342,7 @@ def ReadWeight(path, atomsA, atomsB, whichK, Ns, wtype):
 
     if wtype==1:
 
+        # extract spatial weight from PROCAR of vasp_gam or vasp_std
         for line in procar:
             if not re.search('[a-zA-Z]',line):
                 weight.append(float(line.split()[-1]))
@@ -312,10 +353,27 @@ def ReadWeight(path, atomsA, atomsB, whichK, Ns, wtype):
 
         weightA = np.sum(weight[:,:,atomsA], axis=-1)
         weightB = np.sum(weight[:,:,atomsB], axis=-1)
-        weight = weightA/(weightA+weightB)
+        weight = weightA/(weightA+weightB + 1.0e-6)
+        weight = weight.flatten()
+
+    elif wtype==2:
+
+        # extract spatial weight from PROCAR of vasp_ncl
+        for line in procar:
+            if not re.search('[a-zA-Z]',line):
+                weight.append(float(line.split()[-1]))
+
+        weight = np.array(weight).reshape(nkpts,nbands,nions,4)
+        weight = weight[whichK-1,:,:,0]
+
+        weightA = np.sum(weight[:,atomsA], axis=-1)
+        weightB = np.sum(weight[:,atomsB], axis=-1)
+        weight = weightA/(weightA+weightB + 1.0e-6)
         weight = weight.flatten()
 
     else:
+
+        # extract spin weight from PROCAR of vasp_ncl
         for line in procar:
             if 'tot ' in line:
                 weight.append(float(line.split()[-1]))
@@ -323,7 +381,7 @@ def ReadWeight(path, atomsA, atomsB, whichK, Ns, wtype):
         weight = weight[whichK-1,:,:]
 
         ispin = int( wtype%10 )
-        totspin = np.linalg.norm(weight[:,1:], axis=-1) + 1.0e-5
+        totspin = np.linalg.norm(weight[:,1:], axis=-1) + 1.0e-6
         weight = weight[:, ispin] / totspin
         weight = weight.flatten()
 
@@ -361,8 +419,6 @@ def data_proc(inp, pathD, filshps):
         bandsD = np.arange(bminD-1, bmaxD)
         nbands = int(inp['NBANDS'])
         bands = np.hstack((bandsU, bandsD + nbands))
-        weight[:,:nbands] =  1.0
-        weight[:,nbands:] = -1.0
 
     energy = energy[:, bands]
     weight = weight[:, bands]
@@ -480,7 +536,7 @@ def plot_tden(shp, ksen, cw=None, figname='TDEN.png'):
     print("\n%s has been saved."%figname)
 
 
-def plot_tdpop(shp, cw, figname='TDPOP.png'):
+def plot_tdpop(shp, cw, lspinw, figname='TDPOP.png'):
 
     figsize_x = 4.8
     figsize_y = 3.2 # in inches
@@ -491,7 +547,8 @@ def plot_tdpop(shp, cw, figname='TDPOP.png'):
     mpl.rcParams['axes.unicode_minus'] = False
 
     time = shp[:,0]
-    pop = np.sum(cw, axis=1) / 2.0 + 0.5
+    pop = np.sum(cw, axis=1)
+    if lspinw: pop = pop / 2 + 0.5
 
     lbs = ['Component 1', 'Component 2']
     ax.plot(time,   pop, 'r', lw=1.0, label=lbs[0])
@@ -507,7 +564,7 @@ def plot_tdpop(shp, cw, figname='TDPOP.png'):
     print("\n%s has been saved."%figname)
 
 
-def plot_tdksen(pathD, emin, emax, potim=1.0, figname='TDKSEN.png'):
+def plot_tdksen(pathD, lspinw, emin, emax, potim=1.0, figname='TDKSEN.png'):
 
     path = os.path.join(pathD, 'energy.dat')
     energy = np.loadtxt(path)
@@ -539,6 +596,7 @@ def plot_tdksen(pathD, emin, emax, potim=1.0, figname='TDKSEN.png'):
 
     cmap = 'bwr'
     cmin = -1; cmax = 1
+    if not lspinw: cmin=0
     norm = mpl.colors.Normalize(cmin,cmax)
 
     sc = ax.scatter(T, E, c=cpop, s=1, lw=0.0, alpha=1.0,
