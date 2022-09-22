@@ -47,6 +47,8 @@ def main():
         else:
             loadData(inp, pathD, atomsA, atomsB)
 
+    if not os.path.exists('figdat'): os.mkdir('figdat')
+
     if (1 in which_plt):
 
         coup = read_couple('NATXT', ctype=1)
@@ -486,6 +488,11 @@ def plot_couple(coup, figname='COUPLE.png'):
     cbar.set_label('Coupling (meV)')
     plt.tight_layout()
     plt.savefig(figname, dpi=400)
+
+    prefix = figname.strip().split('.')[0]
+    fildat = 'figdat/' + prefix + '.dat'
+    np.savetxt(fildat, coup, fmt='%12.6f')
+
     print("\n%s has been saved."%figname)
 
 
@@ -524,7 +531,7 @@ def plot_tden(shp, ksen, cw=None, figname='TDEN.png'):
     T = np.tile(shp[:,0], nbands).reshape(nbands,nts).T
     sc = ax.scatter(T, ksen, s=dotsize, c=cpop, lw=0,
                     norm=norm, cmap=cmap)
-    ax.plot(shp[:,1], 'r', lw=1, label='Average Energy')
+    ax.plot(shp[:,0], shp[:,1], 'r', lw=1, label='Average Energy')
     plt.colorbar(sc)
 
     ax.set_xlim(0,namdtime)
@@ -533,6 +540,22 @@ def plot_tden(shp, ksen, cw=None, figname='TDEN.png'):
 
     plt.tight_layout()
     plt.savefig(figname, dpi=400)
+
+    prefix = figname.strip().split('.')[0]
+    fildat = 'figdat/' + prefix + '_avgen' + '.dat'
+    head = '%8s%19s'%('Time', 'average energy')
+    np.savetxt(fildat, shp[:,:2], fmt='%12.6f', header=head)
+
+    fildat = 'figdat/' + prefix + '_en' + '.dat'
+    head = '%8s%27s'%('Time', 'energy of each state')
+    data = np.hstack((shp[:,0].reshape(nts,1), ksen))
+    np.savetxt(fildat, data, fmt='%12.6f', header=head)
+
+    fildat = 'figdat/' + prefix + '_pop' + '.dat'
+    head = '%8s%31s'%('Time', 'population of each state')
+    data = np.hstack((shp[:,0].reshape(nts,1), cpop))
+    np.savetxt(fildat, data, fmt='%12.6f', header=head)
+
     print("\n%s has been saved."%figname)
 
 
@@ -561,6 +584,13 @@ def plot_tdpop(shp, cw, lspinw, figname='TDPOP.png'):
 
     plt.tight_layout()
     plt.savefig(figname, dpi=400)
+
+    prefix = figname.strip().split('.')[0]
+    fildat = 'figdat/' + prefix + '.dat'
+    head = '%8s%17s%13s'%('Time', 'Component 1', 'Component 2')
+    data = np.vstack((time, pop, 1-pop)).T
+    np.savetxt(fildat, data, fmt='%12.6f', header=head)
+
     print("\n%s has been saved."%figname)
 
 
@@ -610,6 +640,18 @@ def plot_tdksen(pathD, lspinw, emin, emax, potim=1.0, figname='TDKSEN.png'):
 
     plt.tight_layout()
     plt.savefig(figname, dpi=400)
+
+    prefix = figname.strip().split('.')[0]
+    fildat = 'figdat/' + prefix + '_en' + '.dat'
+    head = '%8s%27s'%('Time', 'energy of each state')
+    data = np.hstack((T[:,0].reshape(nsw,1), E))
+    np.savetxt(fildat, data, fmt='%12.6f', header=head)
+
+    fildat = 'figdat/' + prefix + '_pop' + '.dat'
+    head = '%8s%31s'%('Time', 'population of each state')
+    data = np.hstack((T[:,0].reshape(nsw,1), cpop))
+    np.savetxt(fildat, data, fmt='%12.6f', header=head)
+
     print("\n%s has been saved."%figname)
 
 
