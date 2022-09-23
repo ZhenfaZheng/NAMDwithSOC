@@ -109,7 +109,7 @@ def read_inp(infile='inp'):
     for line in text:
         if (line[0]=='&' or line[0]=='/' or line[0]=='!'):
             continue
-        temp = line.split('=')
+        temp = line.split('!')[0].split('=')
         key = temp[0].strip().upper()
         value = temp[1].strip().strip('\'').strip('\"')
         inp[key] = value
@@ -365,8 +365,8 @@ def ReadWeight(path, atomsA, atomsB, whichK, Ns, wtype):
             if not re.search('[a-zA-Z]',line):
                 weight.append(float(line.split()[-1]))
 
-        weight = np.array(weight).reshape(nkpts,nbands,nions,4)
-        weight = weight[whichK-1,:,:,0]
+        weight = np.array(weight).reshape(nkpts,nbands,4,nions)
+        weight = weight[whichK-1,:,0,:]
 
         weightA = np.sum(weight[:,atomsA], axis=-1)
         weightB = np.sum(weight[:,atomsB], axis=-1)
