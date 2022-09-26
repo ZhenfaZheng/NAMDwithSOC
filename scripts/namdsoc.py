@@ -12,11 +12,12 @@ def main():
     #                       Basic parameters setting                      #
     #######################################################################
 
-    which_plt = [1, 2, 3, 4]
+    which_plt = [1, 2, 3, 4, 5]
     '''
     Select which figures to plot.
-    1: COUPLE_NA.png (COUPLE_SO.png); 2: TDEN.png; 3: TDPOP.png.
-    4: TDKSEN.png
+    1: COUPLE_NA.png (COUPLE_SO.png);
+    2: TDEN.png; 3: TDPOP.png.; 4:TDWGT.png
+    5: TDKSEN.png
     '''
 
     ldata = True
@@ -71,7 +72,7 @@ def main():
             plot_couple(coup_av, figname='COUPLE_SO.png')
 
 
-    if (2 in which_plt) or (3 in which_plt):
+    if (2 in which_plt) or (3 in which_plt) or (4 in which_plt):
         filshps = glob('SHPROP.*')
         shp, ksen, cw = data_proc(inp, pathD, filshps)
 
@@ -82,9 +83,12 @@ def main():
             plot_tden(shp, ksen, figname='TDEN.png')
 
     if (3 in which_plt):
-        plot_tdpop(shp, cw, lspinw, figname='TDPOP.png')
+        plot_tdpop(inp, shp, figname='TDPOP.png')
 
     if (4 in which_plt):
+        plot_tdwgt(shp, cw, lspinw, figname='TDWGT.png')
+
+    if (5 in which_plt):
         plot_tdksen(pathD, lspinw, emin=-2.0, emax=3.0, figname='TDKSEN.png')
 
     print("\nDone!\n")
@@ -559,7 +563,52 @@ def plot_tden(shp, ksen, cw=None, figname='TDEN.png'):
     print("\n%s has been saved."%figname)
 
 
-def plot_tdpop(shp, cw, lspinw, figname='TDPOP.png'):
+def plot_tdpop(inp, shp, figname='TDPOP.png'):
+
+    figsize_x = 4.8
+    figsize_y = 3.2 # in inches
+    fig, ax = plt.subplots()
+    fig.set_size_inches(figsize_x, figsize_y)
+    mpl.rcParams['axes.unicode_minus'] = False
+
+    namdtime = shp[-1, 0]
+    nbs = shp.shape[1] - 2
+
+    stype = int(inp['SOCTYPE'])
+    if (stype==1):
+        bmin = int(inp['BMIN'])
+        bmax = int(inp['BMAX'])
+        lbs = range(bmin, bmax+1)
+    else:
+        bminU = int(inp['BMINU'])
+        bmaxU = int(inp['BMAXU'])
+        bminD = int(inp['BMIND'])
+        bmaxD = int(inp['BMAXD'])
+        lbsU = ['%d, 1'%ii for ii in range(bminU, bmaxU+1)]
+        lbsD = ['%d, 2'%ii for ii in range(bminD, bmaxD+1)]
+        lbs = lbsU + lbsD
+
+    cmap = plt.cm.nipy_spectral
+    cls = [cmap(i) for i in np.linspace(0, 1, nbs+2)]
+    for ib in range(nbs):
+        ax.plot(shp[:,0], shp[:,ib+2], label=lbs[ib], color=cls[ib], lw=1.0)
+
+    if (nbs<=100):
+        ncol = int(np.sqrt(nbs) / 2) + 1
+        fsize = 10 - np.sqrt(nbs) / 2
+        ax.legend(loc=1, ncol=ncol, fontsize=fsize)
+
+    ax.set_xlim(0,namdtime)
+    ax.set_xlabel('Time (fs)')
+    ax.set_ylabel('Population')
+
+    plt.tight_layout()
+    plt.savefig(figname, dpi=400)
+
+    print("\n%s has been saved."%figname)
+
+
+def plot_tdwgt(shp, cw, lspinw, figname='TDWGT.png'):
 
     figsize_x = 4.8
     figsize_y = 3.2 # in inches
