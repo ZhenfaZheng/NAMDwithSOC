@@ -605,6 +605,12 @@ def plot_tdpop(inp, shp, figname='TDPOP.png'):
     plt.tight_layout()
     plt.savefig(figname, dpi=400)
 
+    prefix = figname.strip().split('.')[0]
+    fildat = 'figdat/' + prefix + '.dat'
+    head = '%8s%31s'%('Time', 'population of each state')
+    index = [0] + list(range(2, nbs+2))
+    np.savetxt(fildat, shp[:,index], fmt='%12.6f', header=head)
+
     print("\n%s has been saved."%figname)
 
 
