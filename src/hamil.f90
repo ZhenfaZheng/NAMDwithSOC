@@ -5,7 +5,7 @@ module hamil
   use constants
   implicit none
 
-  type TDKS 
+  type TDKS
     integer :: ndim
     ! _[c,p,n] means current, previous, next
     complex(kind=q), allocatable, dimension(:) :: psi_c
@@ -21,7 +21,7 @@ module hamil
     complex(kind=q), allocatable, dimension(:,:) :: ham_c
     ! complex(kind=q), allocatable, dimension(:,:) :: ham_p
     ! complex(kind=q), allocatable, dimension(:,:) :: ham_n
-    
+
     ! KS eigenvalues
     real(kind=q), allocatable, dimension(:,:) :: eigKs
     ! Non-adiabatic couplings
@@ -51,6 +51,7 @@ module hamil
     type(namdInfo), intent(in) :: inp
 
     integer :: i, j, N, istat
+    integer, allocatable, dimension(:) :: inibs
 
     ! memory allocation
     ks%ndim = inp%NBASIS
@@ -90,17 +91,22 @@ module hamil
     ! ks%ham_p = cero
     ! ks%ham_n = cero
 
-    if (inp%SOCTYPE==1) then
-      istat = inp%INIBAND - inp%BMIN + 1
-    else if (inp%SOCTYPE==2) then
-      if (inp%INISPIN == 1) then
-        istat = inp%INIBAND - inp%BMINU + 1
-      else
-        istat = inp%INIBAND - inp%BMIND + inp%BMAXU - inp%BMINU + 2
+    allocate(inibs(inp%NINIBS))
+    do i=1, inp%NINIBS
+      if (inp%SOCTYPE==1) then
+        istat = inp%INIBAND(i) - inp%BMIN + 1
+      else if (inp%SOCTYPE==2) then
+        if (inp%INISPIN(i) == 1) then
+          istat = inp%INIBAND(i) - inp%BMINU + 1
+        else
+          istat = inp%INIBAND(i) - inp%BMIND + inp%BMAXU - inp%BMINU + 2
+        end if
       end if
-    end if
+      inibs(i) = istat
+    end do
 
-    ks%psi_c(istat) = uno
+    ks%psi_c(inibs) = uno
+    ks%psi_c = ks%psi_c / SQRT(REAL(inp%NINIBS))
 
     do i=1, inp%NAMDTIME
       j = int( mod(inp%NAMDTINI+i-1, inp%NSW-1) )
@@ -137,8 +143,8 @@ module hamil
         (ks%NAcoup(:,:,TION+1) - ks%NAcoup(:,:,TION)) * TELE / inp%NELM
 
     ! multiply by -i * hbar
-    ks%ham_c = -imgUnit * hbar * ks%ham_c 
-    
+    ks%ham_c = -imgUnit * hbar * ks%ham_c
+
     if (inp%SOCTYPE==2) then
       ks%ham_c(:,:) = ks%ham_c(:,:) + ks%SOcoup(:,:,TION) + &
         (ks%SOcoup(:,:,TION+1) - ks%SOcoup(:,:,TION)) * TELE / inp%NELM
