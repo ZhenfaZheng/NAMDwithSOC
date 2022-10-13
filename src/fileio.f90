@@ -12,15 +12,16 @@ module fileio
     integer :: BMAXD
     integer :: NBASIS      ! No. of adiabatic states as basis
     integer :: NBANDS      ! No. of band of the system
-    integer :: INIBAND     ! inititial adiabatic state of excited electron/hole
+    integer :: NINIBS      ! No. of initial basises
     integer :: NSW         ! No. of MD steps
     integer :: NBEG        ! Begin of MD steps for calculating couplings
     integer :: NAMDTINI    ! Initial time step of NAMD
     integer :: NAMDTIME    ! No. of steps of NAMD
-    integer :: INISPIN     ! Spin component of initial state
     integer, allocatable, dimension(:) :: NAMDTINI_A    ! No. of steps of NAMD
-    integer, allocatable, dimension(:) :: INIBAND_A     ! No. of steps of NAMD
-    integer, allocatable, dimension(:) :: INISPIN_A     ! Initial spin of NAMD
+    integer, allocatable, dimension(:) :: INIBAND     ! Inintial bands
+    integer, allocatable, dimension(:) :: INISPIN     ! Initial spin
+    integer, allocatable, dimension(:,:) :: INIBAND_A ! All initial bands
+    integer, allocatable, dimension(:,:) :: INISPIN_A ! All initial spin
     integer :: NTRAJ       ! No. of surface hopping trajectories
     integer :: NELM        ! No. of steps of electron wave propagation
     integer :: NSAMPLE     ! No. of steps of electron wave propagation
@@ -60,6 +61,7 @@ module fileio
       integer :: nbeg
       integer :: iniband
       integer :: nbands
+      integer :: ninibs
       integer :: soctype
       integer :: namdtime
       ! integer :: namdtini
@@ -80,13 +82,13 @@ module fileio
 
 
       namelist /NAMDPARA/ &
-          bmin, bmax, nsw, nbeg, nbands, &
+          bmin, bmax, nsw, nbeg, nbands, ninibs, &
           bminU, bmaxU, bminD, bmaxD, &
           soctype, potim, ntraj, nelm, &
           temp, rundir, lhole, lshp, lcpext, &
           namdtime, nsample, tbinit
 
-      integer :: ierr, i
+      integer :: ierr, i, j
       logical :: lext
 
       ! set default values for thos parameters
@@ -100,6 +102,7 @@ module fileio
       bmaxD = 0
       nbeg = 0
       nbands = 0
+      ninibs = 1
       soctype = 1
       ! iniband = 0
       ntraj = 1000
@@ -120,8 +123,14 @@ module fileio
       read(unit=8, nml=NAMDPARA)
       close(unit=8)
 
-      if (soctype==2) allocate(inp%INISPIN_A(nsample))
-      allocate(inp%INIBAND_A(nsample), inp%NAMDTINI_A(nsample))
+      allocate(inp%NAMDTINI_A(nsample))
+      allocate(inp%INIBAND_A(nsample, ninibs))
+      allocate(inp%INIBAND(ninibs))
+      if (soctype==2) then
+        allocate(inp%INISPIN_A(nsample, ninibs))
+        allocate(inp%INISPIN(ninibs))
+      end if
+
       inquire(file=tbinit, exist=lext)
       if (.NOT. lext) then
         write(*,*) "File containing initial conditions does NOT exist!"
@@ -129,10 +138,11 @@ module fileio
         open(unit=9, file=tbinit, action='read')
         do i=1, nsample
           if (soctype==1) then
-            read(unit=9,fmt=*) inp%NAMDTINI_A(i), inp%INIBAND_A(i)
+            read(unit=9,fmt=*) inp%NAMDTINI_A(i), &
+                (inp%INIBAND_A(i,j), j=1,ninibs)
           else if (soctype==2) then
-            read(unit=9,fmt=*) &
-             inp%NAMDTINI_A(i), inp%INIBAND_A(i), inp%INISPIN_A(i)
+            read(unit=9,fmt=*) inp%NAMDTINI_A(i), &
+                (inp%INIBAND_A(i,j), inp%INISPIN_A(i,j), j=1,ninibs)
           end if
         end do
         close(9)
@@ -172,6 +182,7 @@ module fileio
       inp%NSW      = nsw
       inp%NBEG     = nbeg
       inp%NBANDS   = nbands
+      inp%NINIBS   = ninibs
       inp%SOCTYPE  = soctype
       inp%NAMDTIME = namdtime
       inp%NTRAJ    = ntraj
@@ -202,7 +213,8 @@ module fileio
         write(*,'(A30,A3,I5)') 'BMIN',    ' = ', inp%BMIN
         write(*,'(A30,A3,I5)') 'BMAX',    ' = ', inp%BMAX
         write(*,'(A30,A3,I5)') 'NBANDS',  ' = ', inp%NBANDS
-        write(*,'(A30,A3,I5)') 'INIBAND', ' = ', inp%INIBAND
+        write(*,'(A30,A3,I5)') 'NINIBS',  ' = ', inp%NINIBS
+      ! write(*,'(A30,A3,I5)') 'INIBAND', ' = ', inp%INIBAND
         write(*,'(A30,A3,I5)') 'SOCTYPE', ' = ', inp%SOCTYPE
       else if (inp%SOCTYPE==2) then
         write(*,'(A30,A3,I5)') 'BMINU',   ' = ', inp%BMINU
@@ -210,8 +222,9 @@ module fileio
         write(*,'(A30,A3,I5)') 'BMIND',   ' = ', inp%BMIND
         write(*,'(A30,A3,I5)') 'BMAXD',   ' = ', inp%BMAXD
         write(*,'(A30,A3,I5)') 'NBANDS',  ' = ', inp%NBANDS
-        write(*,'(A30,A3,I5)') 'INIBAND', ' = ', inp%INIBAND
-        write(*,'(A30,A3,I5)') 'INISPIN', ' = ', inp%INISPIN
+        write(*,'(A30,A3,I5)') 'NINIBS',  ' = ', inp%NINIBS
+      ! write(*,'(A30,A3,I5)') 'INIBAND', ' = ', inp%INIBAND
+      ! write(*,'(A30,A3,I5)') 'INISPIN', ' = ', inp%INISPIN
         write(*,'(A30,A3,I5)') 'SOCTYPE', ' = ', inp%SOCTYPE
       end if
 

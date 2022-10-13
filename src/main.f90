@@ -18,7 +18,7 @@ Program main
   integer :: ns
 
   write(*,*)
-  write(*,*) "Hefei-NAMD (soc version 1.5.0, Oct 13, 2022)"
+  write(*,*) "Hefei-NAMD (soc version 1.5.1, Oct 13, 2022)"
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! First, get user inputs
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -40,9 +40,9 @@ Program main
   ! write(*,*) "T_coup: ", fin - start
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   do ns=1, inp%NSAMPLE
-    inp%NAMDTINI = inp%NAMDTINI_A(ns)
-    inp%INIBAND  = inp%INIBAND_A(ns)
-    if (inp%SOCTYPE==2) inp%INISPIN = inp%INISPIN_A(ns)
+    inp%NAMDTINI = inp%NAMDTINI_A(ns,:)
+    inp%INIBAND  = inp%INIBAND_A(ns,:)
+    if (inp%SOCTYPE==2) inp%INISPIN = inp%INISPIN_A(ns,:)
     call printUserInp(inp)
     ! initiate KS matrix
     call cpu_time(start)
