@@ -24,29 +24,27 @@ module shop
     deallocate(seed)
   end subroutine
 
-  subroutine whichToHop(tion, ks, which)
+  subroutine whichToHop(cstat, ks)
     implicit none
 
-    integer, intent(in) :: tion
-    integer, intent(inout) :: which
+    integer, intent(inout) :: cstat
     type(TDKS), intent(in) :: ks
 
     integer :: i
     real(kind=q) :: lower, upper, r
 
-    which = 0
     call random_number(r)
 
     do i=1, ks%ndim
       if (i == 1) then
         lower = 0
-        upper = ks%sh_prop(i,tion)
+        upper = ks%sh_prop(cstat,i)
       else
         lower = upper
-        upper = upper + ks%sh_prop(i,tion)
+        upper = upper + ks%sh_prop(cstat,i)
       end if
       if (lower <= r .AND. r < upper) then
-        which = i
+        cstat = i
         exit
       end if
     end do
@@ -80,7 +78,7 @@ module shop
                            ks%SOcoup(cstat, :, tion) / hbar )
     end if
 
-    ks%sh_prop(:,tion) = ks%Bkm / Akk * inp%POTIM
+    ks%sh_prop(cstat,:) = ks%Bkm / Akk * inp%POTIM
 
     kbT = inp%TEMP * BOLKEV
 
@@ -88,21 +86,19 @@ module shop
       do i=1, ks%ndim
         dE = ks%eigKs(cstat, tion) - ks%eigKs(i,tion)
         if (dE>0) then
-          ks%sh_prop(i,tion) = ks%sh_prop(i,tion) * exp(-dE / kbT)
+          ks%sh_prop(cstat,i) = ks%sh_prop(cstat,i) * exp(-dE / kbT)
         end if
       end do
     else
       do i=1, ks%ndim
         dE = ks%eigKs(i,tion) - ks%eigKs(cstat, tion)
         if (dE>0) then
-          ks%sh_prop(i,tion) = ks%sh_prop(i,tion) * exp(-dE / kbT)
+          ks%sh_prop(cstat,i) = ks%sh_prop(cstat,i) * exp(-dE / kbT)
         end if
       end do
     end if
 
-    forall (i=1:ks%ndim, ks%sh_prop(i,tion) < 0) ks%sh_prop(i,tion) = 0
-    ! write(*,*) (ks%Bkm(i), i=1, ks%ndim)
-    ! write(*,*) (ks%sh_prop(i, tion), i=1, ks%ndim)
+    forall (i=1:ks%ndim, ks%sh_prop(cstat,i) < 0) ks%sh_prop(cstat,i) = 0
 
   end subroutine
 
@@ -112,11 +108,14 @@ module shop
 
     type(TDKS), intent(inout) :: ks
     type(namdInfo), intent(in) :: inp
-    integer :: i, j, tion
-    integer :: istat, cstat, which
+    integer :: i, j, ibas, nbas, tion
+    integer :: istat, cstat
+    integer, allocatable :: cstat_all(:)
 
     ks%sh_pops = 0
     ks%sh_prop = 0
+    nbas = ks%ndim
+    allocate(cstat_all(inp%NTRAJ))
 
     if (inp%SOCTYPE==1) then
       istat = inp%INIBAND - inp%BMIN + 1
@@ -131,23 +130,25 @@ module shop
     ! initialize the random seed for ramdom number production
     call init_random_seed()
 
-    do i=1, inp%NTRAJ
-      ! in the first step, current step always equal initial step
-      cstat = istat
-      do tion=1, inp%NAMDTIME
-        call calcprop(tion, cstat, ks, inp)
-        call whichToHop(tion, ks, which)
-        if (which > 0) cstat = which
+    cstat_all = istat
+
+    do tion=1, inp%NAMDTIME
+
+      do ibas=1, nbas
+        call calcprop(tion, ibas, ks, inp)
+      end do
+
+      do i=1, inp%NTRAJ
+        cstat = cstat_all(i)
+        call whichToHop(cstat, ks)
+        cstat_all(i) = cstat
         ks%sh_pops(cstat, tion) = ks%sh_pops(cstat, tion) + 1
       end do
+
     end do
 
     ks%sh_pops = ks%sh_pops / inp%NTRAJ
-    ! ks%sh_prop = ks%sh_prop / inp%NTRAJ
 
-    ! do tion=1, inp%NAMDTIME
-    !   write(*,*) (ks%sh_pops(i,tion), i=1, ks%ndim)
-    ! end do
   end subroutine
 
   ! need a subroutine here to write the results we need
