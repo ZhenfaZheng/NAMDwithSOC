@@ -24,10 +24,11 @@ module shop
     deallocate(seed)
   end subroutine
 
-  subroutine whichToHop(cstat, ks)
+  subroutine whichToHop(cstat, nstat, ks)
     implicit none
 
-    integer, intent(inout) :: cstat
+    integer, intent(in) :: cstat
+    integer, intent(inout) :: nstat
     type(TDKS), intent(in) :: ks
 
     integer :: i
@@ -35,6 +36,7 @@ module shop
 
     call random_number(r)
 
+    nstat = cstat
     do i=1, ks%ndim
       if (i == 1) then
         lower = 0
@@ -44,7 +46,7 @@ module shop
         upper = upper + ks%sh_prop(cstat,i)
       end if
       if (lower <= r .AND. r < upper) then
-        cstat = i
+        nstat = i
         exit
       end if
     end do
@@ -109,28 +111,34 @@ module shop
     type(TDKS), intent(inout) :: ks
     type(namdInfo), intent(in) :: inp
     integer :: i, j, ibas, nbas, tion
-    integer :: istat, cstat
-    integer, allocatable :: cstat_all(:)
+    integer :: istat, cstat, nstat
+    integer, allocatable :: cstat_all(:,:)
+    integer, allocatable :: occb_all(:,:)
 
     ks%sh_pops = 0
     ks%sh_prop = 0
     nbas = ks%ndim
-    allocate(cstat_all(inp%NTRAJ))
 
-    if (inp%SOCTYPE==1) then
-      istat = inp%INIBAND - inp%BMIN + 1
-    else if (inp%SOCTYPE==2) then
-      if (inp%INISPIN == 1) then
-        istat = inp%INIBAND - inp%BMINU + 1
-      else
-        istat = inp%INIBAND - inp%BMIND + inp%BMAXU - inp%BMINU + 2
+    allocate(cstat_all(inp%NTRAJ, inp%NINIBS))
+    allocate(occb_all(inp%NTRAJ, inp%NBASIS))
+
+    occb_all = 0
+    do i=1, inp%NINIBS
+      if (inp%SOCTYPE==1) then
+        istat = inp%INIBAND(i) - inp%BMIN + 1
+      else if (inp%SOCTYPE==2) then
+        if (inp%INISPIN(i) == 1) then
+          istat = inp%INIBAND(i) - inp%BMINU + 1
+        else
+          istat = inp%INIBAND(i) - inp%BMIND + inp%BMAXU - inp%BMINU + 2
+        end if
       end if
-    end if
+      cstat_all(:,i) = istat
+      occb_all(:,istat) = 1
+    end do
 
     ! initialize the random seed for ramdom number production
     call init_random_seed()
-
-    cstat_all = istat
 
     do tion=1, inp%NAMDTIME
 
@@ -139,10 +147,14 @@ module shop
       end do
 
       do i=1, inp%NTRAJ
-        cstat = cstat_all(i)
-        call whichToHop(cstat, ks)
-        cstat_all(i) = cstat
-        ks%sh_pops(cstat, tion) = ks%sh_pops(cstat, tion) + 1
+        do j=1, inp%NINIBS
+          cstat = cstat_all(i,j)
+          call whichToHop(cstat, nstat, ks)
+          if (occb_all(i,nstat)>0) nstat = cstat
+          ks%sh_pops(nstat, tion) = ks%sh_pops(nstat, tion) + 1
+          occb_all(i,cstat) = 0; occb_all(i,nstat) = 1
+          cstat_all(i,j) = nstat
+        end do
       end do
 
     end do
@@ -174,7 +186,7 @@ module shop
         write(io,'(A,A12,A3,I5)') '#', 'BMIN',    ' = ', inp%BMIN
         write(io,'(A,A12,A3,I5)') '#', 'BMAX',    ' = ', inp%BMAX
         write(io,'(A,A12,A3,I5)') '#', 'NBANDS',  ' = ', inp%NBANDS
-        write(io,'(A,A12,A3,I5)') '#', 'INIBAND', ' = ', inp%INIBAND
+      ! write(io,'(A,A12,A3,I5)') '#', 'INIBAND', ' = ', inp%INIBAND
         write(io,'(A,A12,A3,I5)') '#', 'SOCTYPE', ' = ', inp%SOCTYPE
       else if (inp%SOCTYPE==2) then
         write(io,'(A,A12,A3,I5)') '#', 'BMINU',   ' = ', inp%BMINU
@@ -182,8 +194,8 @@ module shop
         write(io,'(A,A12,A3,I5)') '#', 'BMIND',   ' = ', inp%BMIND
         write(io,'(A,A12,A3,I5)') '#', 'BMAXD',   ' = ', inp%BMAXD
         write(io,'(A,A12,A3,I5)') '#', 'NBANDS',  ' = ', inp%NBANDS
-        write(io,'(A,A12,A3,I5)') '#', 'INIBAND', ' = ', inp%INIBAND
-        write(io,'(A,A12,A3,I5)') '#', 'INISPIN', ' = ', inp%INISPIN
+      ! write(io,'(A,A12,A3,I5)') '#', 'INIBAND', ' = ', inp%INIBAND
+      ! write(io,'(A,A12,A3,I5)') '#', 'INISPIN', ' = ', inp%INISPIN
         write(io,'(A,A12,A3,I5)') '#', 'SOCTYPE', ' = ', inp%SOCTYPE
       end if
 
@@ -203,11 +215,13 @@ module shop
     end do
 
     do tion=1, inp%NAMDTIME
-      write(unit=24, fmt=*) tion * inp%POTIM, SUM(ks%eigKs(:,tion) * ks%sh_pops(:,tion)), &
-                            (ks%sh_pops(i,tion), i=1, ks%ndim)
-      write(unit=25, fmt=*) tion * inp%POTIM, SUM(ks%eigKs(:,tion) * ks%pop_a(:,tion)), &
-                            (ks%psi_a(i,tion), i=1, ks%ndim)
-                            ! (ks%pop_a(i,tion), i=1, ks%ndim)
+      write(unit=24, fmt=*) tion * inp%POTIM, &
+          SUM(ks%eigKs(:,tion) * ks%sh_pops(:,tion)) / inp%NINIBS, &
+          (ks%sh_pops(i,tion), i=1, ks%ndim)
+      write(unit=25, fmt=*) tion * inp%POTIM, &
+          SUM(ks%eigKs(:,tion) * ks%pop_a(:,tion)) / inp%NINIBS, &
+          (ks%psi_a(i,tion), i=1, ks%ndim)
+        ! (ks%pop_a(i,tion), i=1, ks%ndim)
     end do
 
     close(24)
