@@ -28,7 +28,7 @@ def main():
     if ldata=False, will read data from pathD.
     '''
 
-    lspinw = True
+    lspinw = False
     atomsA = range(8) # indice-1 of atoms
     atomsB = range(8,32)
     '''
@@ -52,7 +52,9 @@ def main():
 
     if (1 in which_plt):
 
-        coup = read_couple('NATXT', ctype=1)
+        stype = int(inp['SOCTYPE'])
+        ctype = 1 if (stype>=1) else 0
+        coup = read_couple('NATXT', ctype)
         coup_av = np.average(np.abs(coup), axis=0)
         hbar = 0.6582119281559802 # ev.fs
         potim = float(inp['POTIM'])
@@ -62,9 +64,8 @@ def main():
             coup_av[ii,ii] = 0.0
         plot_couple(coup_av, figname='COUPLE_NA.png')
 
-        stype = int(inp['SOCTYPE'])
         if (stype==2):
-            coup = read_couple('SOTXT', ctype=1)
+            coup = read_couple('SOTXT', ctype)
             coup_av = np.average(np.abs(coup), axis=0)
             n = coup_av.shape[0]
             for ii in range(n):
@@ -86,7 +87,8 @@ def main():
         plot_tdpop(inp, shp, figname='TDPOP.png')
 
     if (4 in which_plt):
-        plot_tdwgt(shp, cw, lspinw, figname='TDWGT.png')
+        ninibs = int(inp['NINIBS'])
+        plot_tdwgt(shp, cw/ninibs, lspinw, figname='TDWGT.png')
 
     if (5 in which_plt):
         plot_tdksen(pathD, lspinw, emin=-2.0, emax=3.0, figname='TDKSEN.png')
@@ -133,7 +135,8 @@ def default_inp():
            'NBASIS'   : '1',
            'NBEG'     : '0',
            'NBANDS'   : '0',
-           'SOCTYPE'  : '1',
+           'NINIBS'   : '1',
+           'SOCTYPE'  : '0',
            'NTRAJ'    : '1000',
            'NELM'     : '1000',
            'LHOLE'    : '.FALSE.',
@@ -412,7 +415,7 @@ def data_proc(inp, pathD, filshps):
     Eref = np.average(fermi)
 
     stype = int(inp['SOCTYPE'])
-    if (stype==1):
+    if (stype<=1):
         bmin = int(inp['BMIN'])
         bmax = int(inp['BMAX'])
         bands = np.arange(bmin-1, bmax)
@@ -575,7 +578,7 @@ def plot_tdpop(inp, shp, figname='TDPOP.png'):
     nbs = shp.shape[1] - 2
 
     stype = int(inp['SOCTYPE'])
-    if (stype==1):
+    if (stype<=1):
         bmin = int(inp['BMIN'])
         bmax = int(inp['BMAX'])
         lbs = range(bmin, bmax+1)
