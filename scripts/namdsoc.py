@@ -448,11 +448,14 @@ def data_proc(inp, pathD, filshps):
             namdtime = shp[-1,0]
             potim = namdtime / nts
 
-            Ncycle = int(nts / nsw) + 1
+            initimes = np.array([int( float(fil.split('.')[-1]) / potim ) \
+                                 for fil in filshps])
+
+            Ncycle = int((nts+initimes.max()) / nsw) + 1
             energy = np.tile(energy, (Ncycle, 1))
             weight = np.tile(weight, (Ncycle, 1))
 
-        it1 = int( float(fil.split('.')[-1]) / potim ) - 1
+        it1 = initimes[ii] - 1
         it2 = it1 + nts
 
         if ii==0:
