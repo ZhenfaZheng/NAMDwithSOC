@@ -32,7 +32,7 @@ def main():
     atomsA = range(8) # indice-1 of atoms
     atomsB = range(8,32)
     '''
-    For lada=True, will extract spin or spatial weight from PROCAR.
+    For ldata=True, will extract spin or spatial weight from PROCAR.
     if lspinw = True, extract spin weight, atomsA & atomsB will be ignored!
     if lspinw = False, extract spatial weight, you MUST set indice of atoms
         for two component!
